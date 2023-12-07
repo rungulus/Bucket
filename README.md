@@ -15,7 +15,9 @@ this project is seprated into 3 distinct steps (will be 4 for the bot)
 ### preparation
 to start you'll need discordchatexporter: https://github.com/Tyrrrz/DiscordChatExporter
 
-choose the channel you want to use for the training data, make sure to download it as `json` this may take a while!! (you may want to set a partition limit, most editors will get upset about 10gb json files lol) (i used 10mb)
+choose the channel you want to use for the training data, make sure to download it as `json`. this will probably take a while!
+
+(you may want to set a partition limit, most editors will get upset about 10gb json files lol) (i used 10mb)
 
 once you have your json file, rename it to `input.json` and move it into the preparation folder
 
