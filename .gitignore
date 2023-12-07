@@ -8,3 +8,4 @@ package-lock.json
 output.jsonl
 output_chatprompt.jsonl
 output_sameprompt.jsonl
+dirty-data
