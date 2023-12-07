@@ -27,7 +27,7 @@ const sendChatMessage = async (message) => {
     }
 
     const data = await response.json();
-    console.log('API Response:', data);
+    console.info('Tokens:', 'P-',data.usage.prompt_tokens, 'C-', data.usage.completion_tokens, 'T-', data.usage.total_tokens);
 
     if (data.choices && data.choices.length > 0 && data.choices[0].text) {
       return data.choices[0].text.trim();
@@ -59,7 +59,7 @@ try {
     }
 
     const response = await sendChatMessage(input);
-    console.log('Bot:', response);
+    console.log('Bucket:', response);
 
     rl.prompt();
   });
