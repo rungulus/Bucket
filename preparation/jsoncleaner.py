@@ -1,28 +1,42 @@
-##this version will use the same prompt for each completion
-##i have not tested which will give better results yet!
-
 import json
+import os
 
-def clean_and_transform_to_jsonl(input_json_path, output_jsonl_path):
-    with open(input_json_path, 'r', encoding='utf-8') as file:
-        data = json.load(file)
+def clean_and_transform_folder_to_jsonl(input_folder_path, output_jsonl_path):
+    # Check if the output file exists, if not, create an empty file
+    if not os.path.exists(output_jsonl_path):
+        with open(output_jsonl_path, 'w', encoding='utf-8'):
+            pass  # Create an empty file
 
-        transformed_data = []
-        for item in data.get('messages', []):
-            content = item.get('content')
-            if content:
-                transformed_data.append({
-                    "prompt": "Generate a message for Discord, please ->",
-                    "completion": content
-                })
+    transformed_data = []
 
-        with open(output_jsonl_path, 'w', encoding='utf-8') as output_file:
-            for entry in transformed_data:
-                chat_completion_data = {
-                    "prompt": entry["prompt"],
-                    "completion": entry["completion"]
-                }
-                # Write each transformed data line by line as JSONL in chat-completion format
-                output_file.write(json.dumps(chat_completion_data) + '\n')
+    # Iterate through files in the folder
+    for filename in os.listdir(input_folder_path):
+        file_path = os.path.join(input_folder_path, filename)
+        if os.path.isfile(file_path) and filename.endswith('.json'):
+            with open(file_path, 'r', encoding='utf-8') as file:
+                try:
+                    data = json.load(file)
 
-clean_and_transform_to_jsonl('input.json', 'output_sameprompt.jsonl')
+                    for item in data.get('messages', []):
+                        content = item.get('content')
+                        if content:
+                            transformed_data.append({
+                                "prompt": "Generate a message for Discord, please ->",
+                                "completion": content
+                            })
+                except json.JSONDecodeError as e:
+                    print(f"Error decoding JSON in file {filename}: {e}")
+                    # Handle or skip the file causing the error as needed
+
+    # Append aggregated transformed data to the existing JSONL output file
+    with open(output_jsonl_path, 'a', encoding='utf-8') as output_file:
+        for entry in transformed_data:
+            chat_completion_data = {
+                "prompt": entry["prompt"],
+                "completion": entry["completion"]
+            }
+            # Append each transformed data line by line as JSONL in chat-completion format
+            output_file.write(json.dumps(chat_completion_data) + '\n')
+
+# Example usage:
+clean_and_transform_folder_to_jsonl('dirty-data', 'output_combined.jsonl')
