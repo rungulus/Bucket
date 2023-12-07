@@ -25,6 +25,4 @@ def clean_and_transform_to_jsonl(input_json_path, output_jsonl_path):
                 # Write each transformed data line by line as JSONL in chat-completion format
                 output_file.write(json.dumps(chat_completion_data) + '\n')
 
-# Replace 'input.json' with the path to your original JSON file containing the data.
-# Replace 'output_transformed_chat_completion.jsonl' with the desired path for the output file in chat-completion JSONL format.
 clean_and_transform_to_jsonl('input.json', 'output_sameprompt.jsonl')
