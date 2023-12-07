@@ -1,0 +1,4 @@
+# Ignore specific files
+training/config.py
+preparation/input.json
+output_transformed_chat_completion.jsonl
