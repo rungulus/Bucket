@@ -19,9 +19,9 @@ choose the channel you want to use for the training data, make sure to download 
 
 (you may want to set a partition limit, most editors will get upset about 10gb json files lol) (i used 10mb)
 
-once you have your json file, rename it to `input.json` and move it into the preparation folder
+once you have your json files, make a folder called `dirty-data` in the `preparation` folder, and put all the json files in there
 
-run either `jsoncleaner.py` or `jsoncleaner2.py` (they work slightly differently!)
+run either `jsoncleaner.py` or `jsoncleaner2.py` (they work slightly differently!) - they will output to the same file, appending if nessecary, be careful!
 
 currently i just run both and combine the files manually once they're done, idk if this is good though (model's still training)
 
