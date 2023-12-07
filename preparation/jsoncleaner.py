@@ -27,4 +27,4 @@ def clean_and_transform_to_jsonl(input_json_path, output_jsonl_path):
 
 # Replace 'input.json' with the path to your original JSON file containing the data.
 # Replace 'output_transformed_chat_completion.jsonl' with the desired path for the output file in chat-completion JSONL format.
-clean_and_transform_to_jsonl('input.json', 'output_transformed_chat_completion.jsonl')
+clean_and_transform_to_jsonl('input.json', 'output_sameprompt.jsonl')
