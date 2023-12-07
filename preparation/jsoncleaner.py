@@ -12,7 +12,7 @@ def clean_and_transform_to_jsonl(input_json_path, output_jsonl_path):
             content = item.get('content')
             if content:
                 transformed_data.append({
-                    "prompt": "Generate a message for Harvest ->",
+                    "prompt": "Generate a message for Discord, please ->",
                     "completion": content
                 })
 
