@@ -40,6 +40,14 @@ rename `config.sample.json` to `config.json` and enter your API Key and your Mod
 
 open a terminal/command prompt in the validation folder and run `node --experimental-modules validate.mjs`
 
+you can now chat with the bot you made! the token counts are just there for debugging and will probably be removed in a future version.
+
+> P = prompt
+
+> C = completion
+
+> T = total tokens used
+
 ### discord bot
 
 coming soon!
