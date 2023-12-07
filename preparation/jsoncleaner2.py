@@ -22,6 +22,4 @@ def create_jsonl_file(input_json_path, output_jsonl_path):
                     }
                     output_file.write(json.dumps(entry) + '\n')
 
-# Replace 'input.json' with the path to your original JSON file containing the data.
-# Replace 'output.jsonl' with the desired path for the output file in JSONL format.
 create_jsonl_file('input.json', 'output_chatprompt.jsonl')
