@@ -30,7 +30,7 @@ i'm using davinci-002 because its real cheap but still gives decent results, you
 ### validation
 the fun bit!
 
-rename `config.json` to `config.json` and enter your API Key and your Model ID into the specified fields
+rename `config.sample.json` to `config.json` and enter your API Key and your Model ID into the specified fields
 
 open a terminal/command prompt in the validation folder and run `node --experimental-modules validate.mjs`
 
