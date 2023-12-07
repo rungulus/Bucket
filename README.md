@@ -7,7 +7,7 @@ brainrot for free! this repo will help you make your own GPT model based on mess
 ## installation
 you need python and node.js! i'm really dumb and pip wasnt working so deal with it!
 
-once you got that, just clone this repo locally 
+once you got that, just clone this repo
 
 ## usage
 this project is seprated into 3 distinct steps (will be 4 for the bot)
