@@ -1,0 +1,6 @@
+{
+  "dependencies": {
+    "esm": "^3.2.25",
+    "node-fetch": "^3.3.2"
+  }
+}

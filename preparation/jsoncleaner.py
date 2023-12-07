@@ -1,3 +1,6 @@
+##this version will use the same prompt for each completion
+##i have not tested which will give better results yet!
+
 import json
 
 def clean_and_transform_to_jsonl(input_json_path, output_jsonl_path):

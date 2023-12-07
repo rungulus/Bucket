@@ -2,3 +2,7 @@
 training/config.py
 preparation/input.json
 output_transformed_chat_completion.jsonl
+node_modules
+config.json
+package-lock.json
+output.jsonl
