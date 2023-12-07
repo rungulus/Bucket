@@ -1,4 +1,7 @@
+<img src='bucket.jpg' width='100' style="float:right;">
+
 # Bucket
+
 
 brainrot for free!
 
