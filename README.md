@@ -22,6 +22,8 @@ once you have your json file, rename it to `input.json` and move it into the pre
 
 run either `jsoncleaner.py` or `jsoncleaner2.py` (they work slightly differently!)
 
+currently i just run both and combine the files manually once they're done, idk if this is good though (model's still training)
+
 ### training
 
 yeah theres a folder for it, but i would just use openai's web ui: https://platform.openai.com/finetune/
