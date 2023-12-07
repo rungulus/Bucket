@@ -33,6 +33,7 @@ i'm using davinci-002 because its real cheap but still gives decent results, you
 
 **you will have to pay openai at least $5 to continue past this point**
 
+training will also take a while, and will run you about 5 cents per 50,000 tokens or so? im not doing the math!
 ### validation
 the fun bit!
 
