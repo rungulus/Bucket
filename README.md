@@ -23,7 +23,7 @@ once you have your json files, make a folder called `dirty-data` in the `prepara
 
 run either `jsoncleaner.py` or `jsoncleaner2.py` (they work slightly differently!) - they will output to the same file, appending if nessecary, be careful!
 
-currently i just run both and combine the files manually once they're done, idk if this is good though (model's still training)
+currently i just run both, idk if this is good though (model's still training)
 
 ### training
 
