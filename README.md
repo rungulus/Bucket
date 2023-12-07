@@ -6,7 +6,7 @@
 brainrot for free!
 
 ## installation
-you need python and node.js! i'm really dumb and pip wasnt working so deal!
+you need python and node.js! i'm really dumb and pip wasnt working so deal with it!
 
 once you got that, just clone this repo locally 
 
