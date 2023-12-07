@@ -10,3 +10,4 @@ output_chatprompt.jsonl
 output_sameprompt.jsonl
 dirty-data
 output_combined.jsonl
+internal.txt
