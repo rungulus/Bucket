@@ -43,3 +43,8 @@ open a terminal/command prompt in the validation folder and run `node --experime
 coming soon!
 
 
+## why are you calling this bucket
+
+seemed funny, idk! bucket of crap maybe
+
+
