@@ -2,7 +2,7 @@
 
 # Bucket
 
-brainrot for free! this repo will help you make your own GPT model based on messages from your discord server, eventually you can use it with a discord bot!
+brainrot for [at least 5 dollars]! this repo will help you make your own GPT model based on messages from your discord server, eventually you can use it with a discord bot!
 
 ## installation
 you need python and node.js! i'm really dumb and pip wasnt working so deal with it!
