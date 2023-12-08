@@ -21,14 +21,14 @@ def create_combined_jsonl(input_folder_path, output_jsonl_path):
                     num_messages = len(messages)
 
                     for i in range(0, num_messages - 2, 3):  # Iterate through messages considering every third message
-                        system_msg = messages[i].get('content')
+                        #system_msg = messages[i].get('content')
                         user_msg = messages[i + 1].get('content')
                         assistant_msg = messages[i + 2].get('content')
 
-                        if system_msg and user_msg and assistant_msg:
+                        if user_msg and assistant_msg:
                             transformed_data.append({
                                 "role": "system",
-                                "content": system_msg
+                                "content": "Bucket is an AI Model trained on Harvest."
                             })
                             transformed_data.append({
                                 "role": "user",

@@ -1,0 +1,8 @@
+{
+    "discordToken": "YOUR_DISCORD_BOT_TOKEN",
+    "openai": {
+      "apiKey": "YOUR_OPENAI_API_KEY",
+      "modelId": "YOUR_OPENAI_MODEL_ID"
+    }
+  }
+  

@@ -17,7 +17,7 @@ const sendChatMessage = async (message) => {
         'Authorization': `Bearer ${apiKey}`,
       },
       body: JSON.stringify({
-        prompt: `You: ${message}\nBot:`,
+        prompt: `${message}\nBucket:`,
         max_tokens: 15, // Adjust the number of tokens as needed
       }),
     });
@@ -27,7 +27,7 @@ const sendChatMessage = async (message) => {
     }
 
     const data = await response.json();
-    console.info('Tokens:', 'P-',data.usage.prompt_tokens, 'C-', data.usage.completion_tokens, 'T-', data.usage.total_tokens);
+    console.info('[ Tokens:', 'P-',data.usage.prompt_tokens, 'C-', data.usage.completion_tokens, 'T-', data.usage.total_tokens,']');
 
     if (data.choices && data.choices.length > 0 && data.choices[0].text) {
       return data.choices[0].text.trim();
@@ -49,7 +49,7 @@ try {
     output: process.stdout
   });
 
-  rl.setPrompt('You: ');
+  rl.setPrompt('(Actually) You: ');
   rl.prompt();
 
   rl.on('line', async (input) => {
