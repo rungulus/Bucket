@@ -18,7 +18,7 @@ const sendChatMessage = async (message) => {
       },
       body: JSON.stringify({
         prompt: `You: ${message}\nBot:`,
-        max_tokens: 20, // Adjust the number of tokens as needed
+        max_tokens: 15, // Adjust the number of tokens as needed
       }),
     });
 
