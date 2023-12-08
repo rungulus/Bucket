@@ -77,9 +77,11 @@ const processMessages = async () => {
         console.log('Bucket:', response);
         if (response) {
           const filteredResponse = response
-            .replace(/@/g, '@\u200B')
-            .replace(/(https?:\/\/[^\s]+)/gi, '[Bucket tried to send a link]');
-    
+          .replace(/@/g, '@\u200B') // filter pings
+          .replace(/(https?:\/\/[^\s]+)/gi, '[Bucket tried to send a link]') //filter links
+          .replace(/\b[nila4o10][gq]{1,2}(l[e3]t|[e3]r|[a4]|n[o0]g)?s?\b/gi, '[Bucket tried to send a slur, tell rungus!]') //filter slurs
+          .replace(/\btr[a4]n{1,2}([il1][e3]|y|[e3]r)s?\b/gi, '[Bucket tried to send a slur, tell rungus!]')
+          .replace(/retard/gi, '[Bucket tried to send a slur, tell rungus!]')          
           // Reply to the user's message in the same channel
           try {
             await message.reply(({ content: filteredResponse, allowedMentions: { repliedUser: false }}));
