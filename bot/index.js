@@ -82,7 +82,7 @@ const processMessages = async () => {
     
           // Reply to the user's message in the same channel
           try {
-            await message.reply(filteredResponse);
+            await message.reply(({ content: filteredResponse, allowedMentions: { repliedUser: false }}));
             console.log('Replied to', message.author.tag, 'in channel');
           } catch (error) {
             console.error('Error replying to user in channel:', error);
