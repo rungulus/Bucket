@@ -53,8 +53,11 @@ you can now chat with the bot you made! the token counts are just there for debu
 
 ### discord bot
 
-coming soon!
+rename `config.sample.json` to `config.json` and enter your Discord API key, and your OpenAI API Key & Model ID into the fields
 
+open a terminal/command prompt in the validation folder and run `node index.js`
+
+it should get everything it needs, if not do `npm install discord.js node-fetch`
 
 ## why are you calling this bucket
 
