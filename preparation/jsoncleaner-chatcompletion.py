@@ -42,7 +42,7 @@ def create_combined_jsonl(input_folder_path, output_jsonl_path):
                     print(f"Error decoding JSON in file {filename}: {e}")
                     # Handle or skip the file causing the error as needed
 
-    # Write transformed data in the desired JSONL format to the output file
+    
     with open(output_jsonl_path, 'w', encoding='utf-8') as output_file:
         for i in range(0, len(transformed_data), 3):
             messages_set = {
