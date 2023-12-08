@@ -31,7 +31,7 @@ const processMessages = async () => {
           },
           body: JSON.stringify({
             prompt: `${message}\nBucket:`,
-            max_tokens: 20,
+            max_tokens: 15,
           }),
         });
 
