@@ -10,7 +10,7 @@ you need python and node.js! i'm really dumb and pip wasnt working so deal with 
 once you got that, just clone this repo
 
 ## usage
-this project is seprated into 3 distinct steps (will be 4 for the bot)
+this project is seprated into 4 steps!
 
 ### preparation
 to start you'll need discordchatexporter: https://github.com/Tyrrrz/DiscordChatExporter
