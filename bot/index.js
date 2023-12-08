@@ -48,12 +48,12 @@ const processMessages = async () => {
         }
       } catch (error) {
         console.error('OpenAI API Issue:', error);
-        return 'Error occurred while sending message.';
+        return '[Bucket has an Internal Error]';
       }
     };
 
     const logPingReceived = (message) => {
-      console.log(`Ping received from ${message.author.tag}: ${message.content}`);
+      console.log(`Pinged by ${message.author.tag}: ${message.content}`);
     };
 
     const logMessageFailedToSend = (error) => {
@@ -71,16 +71,22 @@ const processMessages = async () => {
     client.on('messageCreate', async (message) => {
       if (message.mentions.has(client.user) && !message.author.bot) {
         logPingReceived(message);
-
+    
         const input = message.content.replace(`<@!${client.user.id}>`, '').trim();
         const response = await sendChatMessage(input).catch(logMessageFailedToSend);
-
+        console.log('Bucket:', response);
         if (response) {
           const filteredResponse = response
             .replace(/@/g, '@\u200B')
             .replace(/(https?:\/\/[^\s]+)/gi, '[Bucket tried to send a link]');
-
-          message.channel.send(filteredResponse);
+    
+          // Reply to the user's message in the same channel
+          try {
+            await message.reply(filteredResponse);
+            console.log('Replied to', message.author.tag, 'in channel');
+          } catch (error) {
+            console.error('Error replying to user in channel:', error);
+          }
         }
       }
     });
