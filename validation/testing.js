@@ -1,5 +1,7 @@
 // this file is for testing the filtering system
-//enter a word you want to test the filtering with on line 32
+//enter a word you want to test the filtering with below
+
+const response = 'word-here'; 
 
 const fs = require('fs').promises;
 
@@ -29,9 +31,8 @@ const processMessages = async () => {
     };
 
     const blockedWordsWithSeverity = await getBlockedWords(severityCategory);
-    const response = 'word-here'; //enter word here
 
-    console.log('Raw Response:', response, '\n');
+    console.log('Raw Response:', response);
     let words = response.split(/\s+/); // Split response into words
 
     // Replace blocked words based on severity category
@@ -47,7 +48,7 @@ const processMessages = async () => {
     });
 
     const filteredResponse = words.join(' '); // Join words back into a string
-    console.log('Bucket:', filteredResponse);
+    console.log('Final Response:', filteredResponse);
   } catch (error) {
     console.error('Error:', error);
   }
