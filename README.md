@@ -24,18 +24,17 @@ You will need:
 
   3. Once you have your json files, make a folder called `dirty-data` in the `preparation` folder, and put all the json files in there.
 
-  4. Run any of the python scripts in the `preparation` folder, they work slightly differently. If you want to use GPT3 models, you can only use `jsoncleaner-chatcompletion.py`. 
+  4. Run the `jsoncleaner.py` python script. This will also take a while depending on the amount of data you have.
 
-They do write to the same file, so use caution.
 
 ## Step 2 - Training
 **This step will cost you at least $5**
 
 There *is* a script in the training folder, but I would just use the web ui for this: https://platform.openai.com/finetune/
 
-You can use whichever model you want, if you *didn't* use `jsoncleaner-chatcompletion.py` you won't be able to use any GPT3+ models.
+You can only use `gpt-3.5-turbo-xxxx` models for fine tuning with the data you've generated.
 
-Training will also take a while, especially if you've given it a lot of data.
+Training will also take a while, especially if you've given it a lot of data. For me training a GPT3.5 model with ~2048 lines of data will run you about $2.
 
 ## Step 3 - Validation
 
