@@ -4,8 +4,6 @@
 
 A GPT discord bot that uses your own server for training data. This repo is to help you build that bot.
 
-*Please note: this is a really dumb idea usually*
-
 ## Why'd you name it Bucket?
 seemed funny.
 
