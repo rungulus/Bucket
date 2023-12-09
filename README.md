@@ -30,7 +30,7 @@ this project is seprated into 4 steps!
 
 yeah theres a folder for it, but i would just use openai's web ui: https://platform.openai.com/finetune/
 
-i'm using davinci-002 because its real cheap but still gives decent results, you can use whatever you want
+you can use whatever model you want, but gpt3 will only work if you used the `jsoncleaner-chatcompletion.py` script
 
 **you will have to pay openai at least $5 to continue past this point**
 
