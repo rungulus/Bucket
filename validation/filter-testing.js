@@ -18,10 +18,12 @@ const processMessages = async () => {
         const csvData = await fs.readFile('blockedwords.csv', 'utf8');
         const rows = csvData.split('\n').slice(1); // Skip header row
         const wordsWithSeverity = rows.map(row => {
-          const [word, severity] = row.split(',').map(cell => cell.trim());
-          return { word: word.trim().toLowerCase(), severity: Number(severity) };
+          const columns = row.split(',');
+          const word = columns[0].trim().toLowerCase(); // text column
+          const severity = Number(columns[7].trim()); // severity_rating column
+          return { word, severity };
         });
-
+    
         const filteredWords = wordsWithSeverity.filter(entry => entry.severity >= severityCategory);
         return filteredWords;
       } catch (error) {
@@ -29,7 +31,7 @@ const processMessages = async () => {
         return [];
       }
     };
-
+    
     const blockedWordsWithSeverity = await getBlockedWords(severityCategory);
 
     console.log('Raw Response:', response);

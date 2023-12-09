@@ -12,22 +12,25 @@ const processMessages = async () => {
     const { openai, severityThreshold, maxTokens } = JSON.parse(config);
     const { apiKey, modelId } = openai;
 
-    const getBlockedWords = async () => {
+    const getBlockedWords = async (severityCategory) => {
       try {
         const csvData = await fs.readFile('blockedwords.csv', 'utf8');
         const rows = csvData.split('\n').slice(1); // Skip header row
-        const words = rows
-          .filter(row => {
-            const [, severity] = row.split(',').map(cell => cell.trim());
-            return Number(severity) >= severityThreshold; // Filter words with severity equal to or higher than threshold
-          })
-          .map(row => row.split(',')[0].trim()); // Extract the word
-        return words;
+        const wordsWithSeverity = rows.map(row => {
+          const columns = row.split(',');
+          const word = columns[0].trim().toLowerCase(); // text column
+          const severity = Number(columns[7].trim()); // severity_rating column
+          return { word, severity };
+        });
+    
+        const filteredWords = wordsWithSeverity.filter(entry => entry.severity >= severityCategory);
+        return filteredWords;
       } catch (error) {
         console.error('Error reading blocked words:', error);
         return [];
       }
     };
+    
 
     const sendChatMessage = async (message) => {
       try {
