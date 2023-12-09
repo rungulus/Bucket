@@ -40,7 +40,7 @@ the fun bit!
 
 - rename `config.sample.json` to `config.json` and enter your API Key and your Model ID into the specified fields
 
-- open a terminal/command prompt in the validation folder and run `node validate.js`
+- open a terminal/command prompt in the validation folder and run `node chatbot.js`
 
 - you can now chat with the bot you made! make sure it's a bit normal, and retrain your model as needed.
 
