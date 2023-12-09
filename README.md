@@ -53,7 +53,7 @@ you can now chat with the bot you made! the token counts are just there for debu
 
 ### discord bot
 
-#### Bucket will want to say slurs. I'm working on a filter solution, but in the future we will need a better way to filter them out from OpenAI's data.
+#### Bucket will want to say slurs after a while. I'm working on a filter solution, but in the future we will need a better way to filter them out from OpenAI's data.
 
 rename `config.sample.json` to `config.json` and enter your Discord API key, and your OpenAI API Key & Model ID into the fields
 
