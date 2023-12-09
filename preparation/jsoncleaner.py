@@ -39,4 +39,4 @@ def clean_and_transform_folder_to_jsonl(input_folder_path, output_jsonl_path):
             output_file.write(json.dumps(chat_completion_data) + '\n')
 
 # Example usage:
-clean_and_transform_folder_to_jsonl('dirty-data', 'output_combined.jsonl')
+clean_and_transform_folder_to_jsonl('dirty-data', 'output.jsonl')

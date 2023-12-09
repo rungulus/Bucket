@@ -44,4 +44,4 @@ def create_combined_jsonl(input_folder_path, output_jsonl_path):
             output_file.write(json.dumps(chat_completion_data) + '\n')
 
 # Example usage:
-create_combined_jsonl('dirty-data', 'output_combined.jsonl')
+create_combined_jsonl('dirty-data', 'output.jsonl')

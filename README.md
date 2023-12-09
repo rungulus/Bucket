@@ -2,62 +2,62 @@
 
 # Bucket
 
-brainrot for [at least 5 dollars]! this repo will help you make your own GPT model based on messages from your discord server, eventually you can use it with a discord bot!
+A GPT discord bot that uses your own server for training data. This repo is to help you build that bot.
 
-## installation
-you need python and node.js! i'm really dumb and pip wasnt working so deal with it!
+*Please note: this is a really dumb idea usually*
 
-once you got that, just clone this repo and follow the steps below
+## Why'd you name it Bucket?
+seemed funny.
 
-## usage
-this project is seprated into 4 steps!
+# Getting Started
 
-### preparation
-- to start you'll need discordchatexporter: https://github.com/Tyrrrz/DiscordChatExporter
+## Step 0 - Stuff you need
+You will need:
+- Python
+- Node.JS
+- (at least) 5 dollars
 
-- choose the channel you want to use for the training data, make sure to download it as `json`. this will probably take a while!
+## Step 1 - Prep
+  1. To get started, you'll need chat data. Use DiscordChatExporter: https://github.com/Tyrrrz/DiscordChatExporter
 
-  - (you may want to set a partition limit, most editors will get upset about 10gb json files lol) (i used 10mb)
+  2. In DiscordChatExporter, choose the channel you want to use for the training data, make sure to download it as `json`. This will probably take a while.
 
-- once you have your json files, make a folder called `dirty-data` in the `preparation` folder, and put all the json files in there
+ You will probably want to set a partition limit! I used `10mb`.
 
-- run either `jsoncleaner.py` or `jsoncleaner2.py` (they work slightly differently!) - they will output to the same file, appending if nessecary, be careful!
+  3. Once you have your json files, make a folder called `dirty-data` in the `preparation` folder, and put all the json files in there.
 
-  - (use `jsoncleaner-chatcompletion.py` if you wanna use gpt3 models)
+  4. Run any of the python scripts in the `preparation` folder, they work slightly differently. If you want to use GPT3 models, you can only use `jsoncleaner-chatcompletion.py`. 
 
+They do write to the same file, so use caution.
 
-### training
+## Step 2 - Training
+**This step will cost you at least $5**
 
-yeah theres a folder for it, but i would just use openai's web ui: https://platform.openai.com/finetune/
+There *is* a script in the training folder, but I would just use the web ui for this: https://platform.openai.com/finetune/
 
-you can use whatever model you want, but gpt3 will only work if you used the `jsoncleaner-chatcompletion.py` script
+You can use whichever model you want, if you *didn't* use `jsoncleaner-chatcompletion.py` you won't be able to use any GPT3+ models.
 
-**you will have to pay openai at least $5 to continue past this point**
+Training will also take a while, especially if you've given it a lot of data.
 
-training will also take a while, and will run you about 5 cents per 50,000 tokens or so? im not doing the math!
-### validation
-the fun bit!
+## Step 3 - Validation
 
-- rename `config.sample.json` to `config.json` and enter your API Key and your Model ID into the specified fields
+1. Rename `config.sample.json` to `config.json` and enter your API Key and your Model ID into the specified fields
 
-- open a terminal/command prompt in the validation folder and run `node chatbot.js`
+2. Also, specify your token amount if you want, this controls how long the messages that the bot replies with are. 
 
-- you can now chat with the bot you made! make sure it's a bit normal, and retrain your model as needed.
+3. Open a terminal/command prompt in the validation folder and run `node chatbot.js`
 
-### discord bot
+4. You can now chat with the bot you made! Make sure it's a bit normal, and retrain your model as needed.
 
-#### Bucket will want to say slurs after a while. I'm working on a filter solution, but in the future we will need a better way to filter them out from OpenAI's data.
+## Step 4 - Releasing it into the wild (Discord)
 
-- rename `config.sample.json` to `config.json` and enter your Discord API key, and your OpenAI API Key & Model ID into the fields
+### Bucket will want to say slurs after a while. There's a filter in place which should block most if not all of them, but in the future we will need a better way to filter them out from OpenAI's data.
 
-  - also enter an amount of tokens, typically ~15 is best
+1. Rename `config.sample.json` to `config.json` and enter your Discord API key, OpenAI API Key, and Fine Tuned Model ID.
+ 
+2. Open a terminal/command prompt in the validation folder and run `node index.js`
 
-- open a terminal/command prompt in the validation folder and run `node index.js`
+If you're having issues with the bot, make sure the dependencies are installed by running `npm install discord.js node-fetch`
 
-it should get everything it needs, if not do `npm install discord.js node-fetch`
-
-## why are you calling this bucket
-
-seemed funny, idk! bucket of crap maybe
-
-
+## That's all!
+If you see an issue, or want to make an improvement please feel free!

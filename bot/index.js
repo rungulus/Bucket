@@ -95,7 +95,7 @@ const processMessages = async () => {
           // Replace blocked words based on severity category
           blockedWords.forEach(word => {
             const regex = new RegExp(`\\b${word}\\b|${word}(?=[\\W]|$)`, 'gi');
-            filteredResponse = filteredResponse.replace(regex, '[Bucket said a blocked word, please let rungus know]');
+            filteredResponse = filteredResponse.replace(regex, '[Bucket said a blocked word]');
           });
           
           console.log('Filtered',filteredResponse);
