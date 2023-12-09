@@ -1,6 +1,4 @@
 const fs = require('fs').promises;
-const { Client, GatewayIntentBits } = require('discord.js');
-
 let fetch;
 try {
   fetch = require('node-fetch');
@@ -11,7 +9,7 @@ try {
 const processMessages = async () => {
   try {
     const config = await fs.readFile('config.json', 'utf8');
-    const { discordToken, openai, severityCategory, maxTokens } = JSON.parse(config);
+    const { openai, severityThreshold, maxTokens } = JSON.parse(config);
     const { apiKey, modelId } = openai;
 
     const getBlockedWords = async () => {
@@ -64,53 +62,39 @@ const processMessages = async () => {
 
     const blockedWords = await getBlockedWords();
 
-    const client = new Client({
-      intents: [
-        GatewayIntentBits.Guilds,
-        GatewayIntentBits.GuildMessages
-      ]
+    console.log('Bucket AI is now active.');
+
+    const readline = require('readline').createInterface({
+      input: process.stdin,
+      output: process.stdout
     });
 
-    client.on('ready', () => {
-      console.log(`Logged in as ${client.user.tag}!`);
-    });
+    readline.on('line', async (input) => {
+      const response = await sendChatMessage(input).catch(error => {
+        console.error('Error sending message:', error);
+        return null;
+      });
+      
+      if (response) {
+        console.log('Raw Response: ', response, '\n');
+        let filteredResponse = response
+          .replace(/@/g, '@\u200B') // Filter pings
+          .replace(/(https?:\/\/[^\s]+)/gi, '[Bucket tried to send a link]'); // Filter links
 
-    client.on('messageCreate', async (message) => {
-      if (message.mentions.has(client.user) && !message.author.bot) {
-        const input = message.content.replace(`<@!${client.user.id}>`, '').trim();
-        const response = await sendChatMessage(input).catch(error => {
-          console.error('Error sending message:', error);
-          return null;
+        // Replace blocked words based on severity category
+        blockedWords.forEach(word => {
+          const regex = new RegExp(`\\b${word}\\b|${word}(?=[\\W]|$)`, 'gi');
+          filteredResponse = filteredResponse.replace(regex, '[Bucket said a blocked word, please let rungus know]');
         });
         
-        if (response) {
-          console.log('PreFilter: ', response ,'\n');
-          let filteredResponse = response
-            .replace(/@/g, '@\u200B') // Filter pings
-            .replace(/(https?:\/\/[^\s]+)/gi, '[Bucket tried to send a link]'); // Filter links
 
-          // Replace blocked words based on severity category
-          blockedWords.forEach(word => {
-            const regex = new RegExp(`\\b${word}\\b|${word}(?=[\\W]|$)`, 'gi');
-            filteredResponse = filteredResponse.replace(regex, '[Bucket said a blocked word, please let rungus know]');
-          });
-          
-          console.log('Filtered',filteredResponse);
-          // Reply to the user's message in the same channel
-          try {
-            await message.reply({
-              content: filteredResponse,
-              allowedMentions: { repliedUser: false }
-            });
-            console.log('Replied to', message.author.tag, 'in channel');
-          } catch (error) {
-            console.error('Error replying to user in channel:', error);
-          }
-        }
+        console.log('Bucket:', filteredResponse);
       }
+
+      readline.prompt();
     });
 
-    await client.login(discordToken);
+    readline.prompt();
   } catch (error) {
     console.error('Error:', error);
   }

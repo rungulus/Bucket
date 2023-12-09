@@ -1,4 +1,8 @@
 {
-  "apiKey": "openai-api-key",
-  "modelId": "openai-model-id"
+  "openai": {
+    "apiKey": "YOUR_OPENAI_API_KEY",
+    "modelId": "YOUR_MODEL_ID"
+  },
+  "severityCategory": 2,
+  "maxTokens": 15
 }
