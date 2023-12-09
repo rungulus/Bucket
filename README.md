@@ -41,21 +41,17 @@ the fun bit!
 
 rename `config.sample.json` to `config.json` and enter your API Key and your Model ID into the specified fields
 
-open a terminal/command prompt in the validation folder and run `node --experimental-modules validate.mjs`
+open a terminal/command prompt in the validation folder and run `node validate.js`
 
-you can now chat with the bot you made! the token counts are just there for debugging and will probably be removed in a future version.
-
-> P = prompt
-
-> C = completion
-
-> T = total tokens used
+you can now chat with the bot you made! make sure it's a bit normal, and retrain your model as needed.
 
 ### discord bot
 
 #### Bucket will want to say slurs after a while. I'm working on a filter solution, but in the future we will need a better way to filter them out from OpenAI's data.
 
 rename `config.sample.json` to `config.json` and enter your Discord API key, and your OpenAI API Key & Model ID into the fields
+
+also enter an amount of tokens, typically ~15 is best
 
 open a terminal/command prompt in the validation folder and run `node index.js`
 
