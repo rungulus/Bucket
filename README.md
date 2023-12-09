@@ -7,7 +7,7 @@ brainrot for [at least 5 dollars]! this repo will help you make your own GPT mod
 ## installation
 you need python and node.js! i'm really dumb and pip wasnt working so deal with it!
 
-once you got that, just clone this repo
+once you got that, just clone this repo and follow the steps below
 
 ## usage
 this project is seprated into 4 steps!
