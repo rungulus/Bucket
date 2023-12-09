@@ -13,19 +13,18 @@ once you got that, just clone this repo
 this project is seprated into 4 steps!
 
 ### preparation
-to start you'll need discordchatexporter: https://github.com/Tyrrrz/DiscordChatExporter
+- to start you'll need discordchatexporter: https://github.com/Tyrrrz/DiscordChatExporter
 
-choose the channel you want to use for the training data, make sure to download it as `json`. this will probably take a while!
+- choose the channel you want to use for the training data, make sure to download it as `json`. this will probably take a while!
 
-(you may want to set a partition limit, most editors will get upset about 10gb json files lol) (i used 10mb)
+  - (you may want to set a partition limit, most editors will get upset about 10gb json files lol) (i used 10mb)
 
-once you have your json files, make a folder called `dirty-data` in the `preparation` folder, and put all the json files in there
+- once you have your json files, make a folder called `dirty-data` in the `preparation` folder, and put all the json files in there
 
-run either `jsoncleaner.py` or `jsoncleaner2.py` (they work slightly differently!) - they will output to the same file, appending if nessecary, be careful!
+- run either `jsoncleaner.py` or `jsoncleaner2.py` (they work slightly differently!) - they will output to the same file, appending if nessecary, be careful!
 
-(use `jsoncleaner-chatcompletion.py` if you wanna use gpt3 models)
+  - (use `jsoncleaner-chatcompletion.py` if you wanna use gpt3 models)
 
-currently i just run both, idk if this is good though (model's still training)
 
 ### training
 
@@ -39,21 +38,21 @@ training will also take a while, and will run you about 5 cents per 50,000 token
 ### validation
 the fun bit!
 
-rename `config.sample.json` to `config.json` and enter your API Key and your Model ID into the specified fields
+- rename `config.sample.json` to `config.json` and enter your API Key and your Model ID into the specified fields
 
-open a terminal/command prompt in the validation folder and run `node validate.js`
+- open a terminal/command prompt in the validation folder and run `node validate.js`
 
-you can now chat with the bot you made! make sure it's a bit normal, and retrain your model as needed.
+- you can now chat with the bot you made! make sure it's a bit normal, and retrain your model as needed.
 
 ### discord bot
 
 #### Bucket will want to say slurs after a while. I'm working on a filter solution, but in the future we will need a better way to filter them out from OpenAI's data.
 
-rename `config.sample.json` to `config.json` and enter your Discord API key, and your OpenAI API Key & Model ID into the fields
+- rename `config.sample.json` to `config.json` and enter your Discord API key, and your OpenAI API Key & Model ID into the fields
 
-also enter an amount of tokens, typically ~15 is best
+  - also enter an amount of tokens, typically ~15 is best
 
-open a terminal/command prompt in the validation folder and run `node index.js`
+- open a terminal/command prompt in the validation folder and run `node index.js`
 
 it should get everything it needs, if not do `npm install discord.js node-fetch`
 
