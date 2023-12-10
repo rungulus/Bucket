@@ -8,10 +8,55 @@ try {
   fetch = (...args) => import('node-fetch').then(({ default: fetch }) => fetch(...args));
 }
 
+const logDirectory = 'logs'; // Directory to store log files
+const maxLogFileSize = 10 * 1024 * 1024; // 10 MB (in bytes)
+
+let logToFile = async (logData) => {
+  const currentDate = new Date().toISOString().slice(0, 10); // Get current date for log file name
+
+  try {
+    await fs.mkdir(logDirectory, { recursive: true }); // Create logs directory if it doesn't exist
+    const logFileName = `${logDirectory}/bot_logs_${currentDate}.txt`;
+    
+    let fileStats;
+    try {
+      fileStats = await fs.stat(logFileName);
+    } catch (err) {
+      // File does not exist, create a new one
+    }
+
+    if (!fileStats || fileStats.size >= maxLogFileSize) {
+      // Create a new log file if the current one is too large or doesn't exist
+      await fs.writeFile(logFileName, `${logData}\n`);
+    } else {
+      // Append to the current log file
+      await fs.writeFile(logFileName, `${logData}\n`, { flag: 'a' });
+    }
+
+    //console.log('Log written to file.');
+  } catch (error) {
+    console.error('Error writing to log file:', error);
+  }
+};
+
+let totalPings = 0; // Counter for total pings received
+let blockedWordsCount = 0; // Counter for blocked words
+let botState = 'Idle';
+let botTag = 'undefined';
+
+
+function updateConsole() {
+  console.clear(); // Clear console before updating counters
+  console.log('Connected as', botTag);
+  console.log('Total pings received:', totalPings);
+  console.log('Total blocked words found:', blockedWordsCount);
+  console.log('Current Bot State:', botState);
+}
+
 const processMessages = async () => {
   try {
     const config = await fs.readFile('config.json', 'utf8');
-    const { discordToken, openai, severityCategory, maxTokens } = JSON.parse(config);
+    const { discordToken, openai, severityCategory, maxTokens, systemPrompt } = JSON.parse(config);
     const { apiKey, modelId } = openai;
 
     const getBlockedWords = async (severityCategory) => {
@@ -32,12 +77,11 @@ const processMessages = async () => {
         return [];
       }
     };
-    
 
     const sendChatMessage = async (message) => {
       try {
-        const systemPrompt = "Bucket is an AI language model trained on Discord. Bucket is not right wing, racist, sexist, homophobic, or transphobic. Bucket will refuse to say all slurs, and is generally supportive of all people. Bucket uses she/her pronouns, and her favorite color is Red. Bucket will also try to keep her responses short, one line, and only respond as herself. Bucket's favorite user is rungus.";
-        
+        botState = 'Waiting for AI Response';
+        updateConsole();
         const response = await fetch(`https://api.openai.com/v1/engines/${modelId}/completions`, {
           method: 'POST',
           headers: {
@@ -69,6 +113,7 @@ const processMessages = async () => {
 
     const blockedWords = await getBlockedWords();
 
+
     const client = new Client({
       intents: [
         GatewayIntentBits.Guilds,
@@ -77,42 +122,69 @@ const processMessages = async () => {
     });
 
     client.on('ready', () => {
-      console.log(`Logged in as ${client.user.tag}!`);
+      botTag = client.user.tag;
+      updateConsole();
     });
 
     client.on('messageCreate', async (message) => {
       if (message.mentions.has(client.user) && !message.author.bot) {
-        const input = message.content.replace('Message:').trim();
-        // const input = message.content.replace(`<@!${client.user.id}>`, '').trim();
+        totalPings++;
+        botState = `Pinged (${message.author.tag})`;
+        updateConsole();
+        const sender = message.author.tag;
+        const originalMessage = message.content.replace(/<@!\d+>/g, '').replace('<@1183327864624517120>', '').trim(); //dont send the ping to the ai
+
+        let logData = `Sender: ${sender}\nOriginal Message: ${originalMessage}`;
+
+        message.channel.sendTyping();
+        const input = originalMessage;
         const response = await sendChatMessage(input).catch(error => {
           console.error('Error sending message:', error);
           return null;
         });
-        
+
         if (response) {
-          console.log('PreFilter: ', response ,'\n');
+          botState = 'Processing Reply';
+          updateConsole();
           let filteredResponse = response
-            .replace(/@/g, '@\u200B') // Filter pings
-            .replace(/(https?:\/\/[^\s]+)/gi, '[Bucket tried to send a link]'); // Filter links
+            .replace(/<@!\d+>/g, '') //remove ping tags
+            .replace(/@/g, '@\u200B') // invisible space so bot cannot ping normally
+            .replace(/(https?:\/\/[^\s]+)/gi, '~~link blocked~~'); // remove links
 
           // Replace blocked words based on severity category
           blockedWords.forEach(word => {
-            const regex = new RegExp(`\\b${word}\\b|${word}(?=[\\W]|$)`, 'gi');
-            filteredResponse = filteredResponse.replace(regex, '[Bucket said a blocked word]');
+            const regex = new RegExp(`\\b${word.word}\\b|${word.word}(?=[\\W]|$)`, 'gi');
+            if (filteredResponse.match(regex)) {
+              blockedWordsCount++; // Increment blocked words counter for each match found
+            }
+            filteredResponse = filteredResponse.replace(regex, '~~word blocked~~');
           });
           
-          console.log('Filtered',filteredResponse);
-          // Reply to the user's message in the same channel
+          logData += `\nPre-Filter: ${response}`;
+          logData += `\nFiltered: ${filteredResponse}`;
+          logData += '\n------------------------------------';
+
           try {
+            botState = 'Attempting Send';
+            updateConsole();
             await message.reply({
               content: filteredResponse,
               allowedMentions: { repliedUser: false }
             });
-            console.log('Replied to', message.author.tag, 'in channel');
+            //console.log('Replied to', message.author.tag, 'in channel');
+            botState = 'Sent Message';
+            updateConsole();
           } catch (error) {
             console.error('Error replying to user in channel:', error);
           }
+        } else {
+          console.log('No response from the bot.');
         }
+        botState = 'Logging';
+        updateConsole();
+        await logToFile(logData); // Write log data to file
+        botState = 'Idle';
+        updateConsole();
       }
     });
 
@@ -123,3 +195,4 @@ const processMessages = async () => {
 };
 
 processMessages();
+updateConsole();

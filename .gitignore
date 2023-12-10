@@ -12,3 +12,4 @@ dirty-data
 output_combined.jsonl
 internal.txt
 output_chatcompletion.jsonl
+logs
