@@ -81,6 +81,7 @@ const processMessages = async () => {
     const sendChatMessage = async (message) => {
       try {
         botState = 'Waiting for AI Response';
+        
         updateConsole();
         const response = await fetch(`https://api.openai.com/v1/engines/${modelId}/completions`, {
           method: 'POST',
@@ -130,12 +131,12 @@ const processMessages = async () => {
       if (message.channelId !== allowedChannelId){
         return;
       }
-
+      
       const content = message.content.toLowerCase().trim();
 
       if (content.startsWith('bucket, ') || message.mentions.has(client.user)) {
-        totalPings++;
         message.channel.sendTyping();
+        totalPings++;
         botState = `Triggered (${message.author.tag})`;
         updateConsole();
         const sender = message.author.tag;
