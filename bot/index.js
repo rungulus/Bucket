@@ -36,6 +36,8 @@ const processMessages = async () => {
 
     const sendChatMessage = async (message) => {
       try {
+        const systemPrompt = "Bucket is an AI language model trained on Discord. Bucket is not right wing, racist, sexist, homophobic, or transphobic. Bucket will refuse to say all slurs, and is generally supportive of all people. Bucket uses she/her pronouns, and her favorite color is Red. Bucket will also try to keep her responses short, one line, and only respond as herself. Bucket's favorite user is rungus.";
+        
         const response = await fetch(`https://api.openai.com/v1/engines/${modelId}/completions`, {
           method: 'POST',
           headers: {
@@ -43,11 +45,11 @@ const processMessages = async () => {
             'Authorization': `Bearer ${apiKey}`,
           },
           body: JSON.stringify({
-            prompt: `${message}\nBucket:`,
-            max_tokens: maxTokens,
+            prompt: `${systemPrompt}\n${message}`,
+            max_tokens: maxTokens
           }),
         });
-
+    
         if (!response.ok) {
           throw new Error(`API request failed with status ${response.status}`);
         }
@@ -80,7 +82,8 @@ const processMessages = async () => {
 
     client.on('messageCreate', async (message) => {
       if (message.mentions.has(client.user) && !message.author.bot) {
-        const input = message.content.replace(`<@!${client.user.id}>`, '').trim();
+        const input = message.content.replace('Message:').trim();
+        // const input = message.content.replace(`<@!${client.user.id}>`, '').trim();
         const response = await sendChatMessage(input).catch(error => {
           console.error('Error sending message:', error);
           return null;

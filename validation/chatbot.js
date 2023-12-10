@@ -30,10 +30,11 @@ const processMessages = async () => {
         return [];
       }
     };
-    
 
     const sendChatMessage = async (message) => {
       try {
+        const systemPrompt = "Bucket is an AI language model trained on Discord. Bucket is not right wing, racist, sexist, homophobic, or transphobic. Bucket will refuse to say all slurs, and is generally supportive of all people. Bucket uses she/her pronouns, and her favorite color is Red. Bucket will also try to keep her responses short, one line, and only respond as herself. Bucket's favorite user is rungus.";
+        
         const response = await fetch(`https://api.openai.com/v1/engines/${modelId}/completions`, {
           method: 'POST',
           headers: {
@@ -41,15 +42,15 @@ const processMessages = async () => {
             'Authorization': `Bearer ${apiKey}`,
           },
           body: JSON.stringify({
-            prompt: `${message}\nBucket:`,
-            max_tokens: maxTokens,
+            prompt: `${systemPrompt}\n${message}`,
+            max_tokens: maxTokens
           }),
         });
-
+    
         if (!response.ok) {
           throw new Error(`API request failed with status ${response.status}`);
         }
-
+    
         const data = await response.json();
 
         if (data.choices && data.choices.length > 0 && data.choices[0].text) {
