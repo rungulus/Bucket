@@ -9,7 +9,7 @@ try {
 const processMessages = async () => {
   try {
     const config = await fs.readFile('config.json', 'utf8');
-    const { openai, severityThreshold, maxTokens } = JSON.parse(config);
+    const { openai, severityCategory, maxTokens, systemPrompt} = JSON.parse(config);
     const { apiKey, modelId } = openai;
 
     const getBlockedWords = async (severityCategory) => {
@@ -33,8 +33,6 @@ const processMessages = async () => {
 
     const sendChatMessage = async (message) => {
       try {
-        const systemPrompt = "Bucket is an AI language model trained on Discord. Bucket is not right wing, racist, sexist, homophobic, or transphobic. Bucket will refuse to say all slurs, and is generally supportive of all people. Bucket uses she/her pronouns, and her favorite color is Red. Bucket will also try to keep her responses short, one line, and only respond as herself. Bucket's favorite user is rungus.";
-        
         const response = await fetch(`https://api.openai.com/v1/engines/${modelId}/completions`, {
           method: 'POST',
           headers: {
@@ -50,7 +48,7 @@ const processMessages = async () => {
         if (!response.ok) {
           throw new Error(`API request failed with status ${response.status}`);
         }
-    
+
         const data = await response.json();
 
         if (data.choices && data.choices.length > 0 && data.choices[0].text) {
@@ -64,7 +62,7 @@ const processMessages = async () => {
       }
     };
 
-    const blockedWords = await getBlockedWords();
+    const blockedWords = await getBlockedWords(severityCategory);
 
     console.log('Bucket AI is now active.');
 
@@ -80,15 +78,20 @@ const processMessages = async () => {
       });
       
       if (response) {
-        console.log('Raw Response: ', response, '\n');
+        botState = 'Processing Reply';
+        updateConsole();
         let filteredResponse = response
-          .replace(/@/g, '@\u200B') // Filter pings
-          .replace(/(https?:\/\/[^\s]+)/gi, '[Bucket tried to send a link]'); // Filter links
+          .replace(/<@!\d+>/g, '') //remove ping tags
+          .replace(/@/g, '@\u200B') // invisible space so bot cannot ping normally
+          .replace(/(https?:\/\/[^\s]+)/gi, '~~link blocked~~'); // remove links
 
         // Replace blocked words based on severity category
         blockedWords.forEach(word => {
-          const regex = new RegExp(`\\b${word}\\b|${word}(?=[\\W]|$)`, 'gi');
-          filteredResponse = filteredResponse.replace(regex, '[Bucket said a blocked word]');
+          const regex = new RegExp(`\\b${word.word}\\b|${word.word}(?=[\\W]|$)`, 'gi');
+          if (filteredResponse.match(regex)) {
+            blockedWordsCount++; // Increment blocked words counter for each match found
+          }
+          filteredResponse = filteredResponse.replace(regex, 'nt');
         });
         
 

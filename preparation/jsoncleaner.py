@@ -13,7 +13,7 @@ def load_blocked_words(csv_file_path):
             blocked_words[word] = severity
     return blocked_words
 
-def create_combined_jsonl(input_folder_path, output_jsonl_path, blocked_words):
+def create_combined_jsonl(input_folder_path, output_jsonl_path, blocked_words, system_prompt):
     # Check if the output file exists, if not, create an empty file
     if not os.path.exists(output_jsonl_path):
         with open(output_jsonl_path, 'w', encoding='utf-8'):
@@ -51,7 +51,7 @@ def create_combined_jsonl(input_folder_path, output_jsonl_path, blocked_words):
                             if filter_word(user_msg) and filter_word(assistant_msg):
                                 transformed_data.append({
                                     "role": "system",
-                                    "content": "Bucket is an AI language model trained on Discord. Bucket is not right wing, racist, sexist, homophobic, or transphobic. Bucket will refuse to say all slurs, and is generally supportive of all people. Bucket uses she/her pronouns, and her favorite color is Red. Bucket will also try to keep her responses short, and only respond as herself. Bucket's favorite user is rungus."
+                                    "content": system_prompt
                                 })
                                 transformed_data.append({
                                     "role": "user",
@@ -78,6 +78,9 @@ def create_combined_jsonl(input_folder_path, output_jsonl_path, blocked_words):
             }
             output_file.write(json.dumps(messages_set) + '\n')
 
+# Ask user for the system prompt
+systemPrompt = input("Enter the system prompt: ")
+
 # Example usage:
 blocked_words = load_blocked_words('blockedwords.csv')
-create_combined_jsonl('dirty-data', 'output.jsonl', blocked_words)
+create_combined_jsonl('dirty-data', 'output.jsonl', blocked_words, systemPrompt)

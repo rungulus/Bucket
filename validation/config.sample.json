@@ -4,5 +4,6 @@
     "modelId": "YOUR_MODEL_ID"
   },
   "severityCategory": 2,
-  "maxTokens": 15
+  "maxTokens": 15,
+  "systemPrompt": "SYSTEM-PROMPT"
 }

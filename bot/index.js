@@ -156,7 +156,7 @@ const processMessages = async () => {
           let filteredResponse = response
             .replace(/<@!\d+>/g, '') //remove ping tags
             .replace(/@/g, '@\u200B') // invisible space so bot cannot ping normally
-            .replace(/(https?:\/\/[^\s]+)/gi, '~~link blocked~~'); // remove links
+            .replace(/(https?:\/\/[^\s]+)/gi, '~~link removed~~'); // remove links
 
           // Replace blocked words based on severity category
           blockedWords.forEach(word => {
@@ -164,10 +164,13 @@ const processMessages = async () => {
             if (filteredResponse.match(regex)) {
               blockedWordsCount++; // Increment blocked words counter for each match found
             }
-            filteredResponse = filteredResponse.replace(regex, 'nt');
+            filteredResponse = filteredResponse.replace(regex, 'nt'); //temporary, seems we have something tripping up the filter, especially on words ending in "nt", like "want"
+            //todo: figure out why that's happening, lol.
           });
           
+          logData += '\n--';
           logData += `\nPre-Filter: ${response}`;
+          logData += '\n--';
           logData += `\nFiltered: ${filteredResponse}`;
           logData += '\n------------------------------------';
 

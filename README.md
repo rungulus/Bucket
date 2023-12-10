@@ -24,7 +24,11 @@ You will need:
 
   3. Once you have your json files, make a folder called `dirty-data` in the `preparation` folder, and put all the json files in there.
 
-  4. Run the `jsoncleaner.py` python script. This will also take a while depending on the amount of data you have.
+  4. Run the `jsoncleaner.py` python script.
+
+  5. When asked, enter your system prompt. 
+  
+  Your system prompt sets the "context" for the AI Model, as well as placing restrictions or "boundaries" on its responses. You may want to write this down for future steps, but you can also just grab it from the `output.jsonl` file.
 
 
 ## Step 2 - Training
@@ -38,7 +42,11 @@ Training will also take a while, especially if you've given it a lot of data. Fo
 
 ## Step 3 - Validation
 
-1. Rename `config.sample.json` to `config.json` and enter your API Key and your Model ID into the specified fields
+1. Rename `config.sample.json` to `config.json` and enter your API Key, Model ID, and system prompt into the specified fields
+
+> **A note on system prompts**
+> 
+> While you're in `config.json`, you need to add a system prompt. This sets the guidelines and "boundaries" that the AI *mostly* follows. You can use the same system prompt that was used in `jsoncleaner.py`, but now would be the best time to mess around and see what gives you the best results. 
 
 2. Also, specify your token amount if you want, this controls how long the messages that the bot replies with are. 
 
@@ -48,13 +56,17 @@ Training will also take a while, especially if you've given it a lot of data. Fo
 
 ## Step 4 - Releasing it into the wild (Discord)
 
-### Bucket will want to say slurs after a while. There's a filter in place which should block most if not all of them, but in the future we will need a better way to filter them out from OpenAI's data.
+### Bucket will want to say slurs after a while. There's a filter in place which should block most if not all of them, and a well crafted system prompt will prevent them, but we will need a better solution for "ignoring" them from OpenAI's data.
 
-1. Rename `config.sample.json` to `config.json` and enter your Discord API key, OpenAI API Key, and Fine Tuned Model ID.
+1. Rename `config.sample.json` to `config.json`, enter your Discord API key, and then just copy the rest of your settings from `validation/config.json`.
+
+2. Enter the ID of the channel you want the bot to monitor for pings and respond in into the `allowedChannelId` node.
  
-2. Open a terminal/command prompt in the validation folder and run `node index.js`
+3. Open a terminal/command prompt in the validation folder and run `node index.js`
 
 If you're having issues with the bot, make sure the dependencies are installed by running `npm install discord.js node-fetch`
+
+Bucket will log responses, and who triggered the bot in the `/logs/` folder. 
 
 ## That's all!
 If you see an issue, or want to make an improvement please feel free!
