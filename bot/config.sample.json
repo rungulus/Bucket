@@ -6,5 +6,6 @@
   },
   "severityCategory": 2,
   "maxTokens": 15,
-  "systemPrompt": "SYSTEM-PROMPT"
+  "systemPrompt": "SYSTEM-PROMPT",
+  "allowedChannelId": "CHANNEL-ID"
 }

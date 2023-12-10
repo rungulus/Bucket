@@ -56,7 +56,7 @@ function updateConsole() {
 const processMessages = async () => {
   try {
     const config = await fs.readFile('config.json', 'utf8');
-    const { discordToken, openai, severityCategory, maxTokens, systemPrompt } = JSON.parse(config);
+    const { discordToken, openai, severityCategory, maxTokens, systemPrompt, allowedChannelId } = JSON.parse(config);
     const { apiKey, modelId } = openai;
 
     const getBlockedWords = async (severityCategory) => {
@@ -111,7 +111,7 @@ const processMessages = async () => {
       }
     };
 
-    const blockedWords = await getBlockedWords();
+    const blockedWords = await getBlockedWords(severityCategory);
 
 
     const client = new Client({
@@ -127,6 +127,9 @@ const processMessages = async () => {
     });
 
     client.on('messageCreate', async (message) => {
+      if (message.channelId !== allowedChannelId){
+        return;
+      }
       if (message.mentions.has(client.user) && !message.author.bot) {
         totalPings++;
         botState = `Pinged (${message.author.tag})`;
