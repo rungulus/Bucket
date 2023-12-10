@@ -130,16 +130,20 @@ const processMessages = async () => {
       if (message.channelId !== allowedChannelId){
         return;
       }
-      if (message.mentions.has(client.user) && !message.author.bot) {
+
+      const content = message.content.toLowerCase().trim();
+
+      if (content.startsWith('bucket, ') || message.mentions.has(client.user)) {
         totalPings++;
-        botState = `Pinged (${message.author.tag})`;
+        message.channel.sendTyping();
+        botState = `Triggered (${message.author.tag})`;
         updateConsole();
         const sender = message.author.tag;
         const originalMessage = message.content.replace(/<@!\d+>/g, '').replace('<@1183327864624517120>', '').trim(); //dont send the ping to the ai
 
         let logData = `Sender: ${sender}\nOriginal Message: ${originalMessage}`;
 
-        message.channel.sendTyping();
+        
         const input = originalMessage;
         const response = await sendChatMessage(input).catch(error => {
           console.error('Error sending message:', error);
@@ -160,7 +164,7 @@ const processMessages = async () => {
             if (filteredResponse.match(regex)) {
               blockedWordsCount++; // Increment blocked words counter for each match found
             }
-            filteredResponse = filteredResponse.replace(regex, '~~word blocked~~');
+            filteredResponse = filteredResponse.replace(regex, 'nt');
           });
           
           logData += `\nPre-Filter: ${response}`;
