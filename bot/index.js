@@ -50,15 +50,19 @@ let outputTokensUsed = 0;
 let totalTokensUsed = 0;
 let totalInputTokensUsed = 0;
 let totalOutputTokensUsed = 0;
+let totalPromptTokensUsed = 0;
 
 // Function to update the console output
 function updateConsole() {
   console.clear(); // Clear console before updating counters
+  totalPromptTokensUsed = inputTokensUsed + outputTokensUsed;
   console.log('Connected as', botTag);
   console.log('Total pings received:', totalPings);
   console.log('Total blocked words found:', blockedWordsCount);
   console.log('Current Bot State:', botState);
-  console.log('Tokens Used:', totalTokensUsed, `(Input:${inputTokensUsed}/${totalInputTokensUsed}, Output:${outputTokensUsed}/${totalOutputTokensUsed})`);
+  console.log(`Total Tokens Used: ${totalTokensUsed}`);
+  console.log(`Input Tokens Used: ${inputTokensUsed} (Total Input: ${totalInputTokensUsed})`);
+  console.log(`Output Tokens Used: ${outputTokensUsed} (Total Output: ${totalOutputTokensUsed})`);
 }
 
 const processMessages = async () => {
@@ -88,7 +92,7 @@ const processMessages = async () => {
 
     const sendChatMessage = async (message) => {
       try {
-        botState = 'Waiting for AI Response';
+        botState = 'Waiting for AI';
         
         updateConsole();
         const response = await fetch(`https://api.openai.com/v1/engines/${modelId}/completions`, {
@@ -117,7 +121,7 @@ const processMessages = async () => {
         }
       } catch (error) {
         console.error('OpenAI API Issue:', error);
-        return '[Bucket has an Internal Error]';
+        return '[OpenAI API Error]';
       }
     };
 
@@ -146,7 +150,7 @@ const processMessages = async () => {
       if (content.startsWith('bucket, ') || message.mentions.has(client.user)) {
         message.channel.sendTyping();
         totalPings++;
-        botState = `Triggered (${message.author.tag})`;
+        botState = `Activated by ${message.author.tag}`;
         updateConsole();
         const sender = message.author.tag;
         const originalMessage = message.content.replace(/<@!\d+>/g, '').replace('<@1183327864624517120>', '').trim(); //dont send the ping to the ai
@@ -195,7 +199,7 @@ const processMessages = async () => {
           logData += '\n------------------------------------';
 
           try {
-            botState = 'Attempting Send';
+            botState = 'Sending Message';
             updateConsole();
             await message.reply({
               content: filteredResponse,
@@ -209,7 +213,7 @@ const processMessages = async () => {
         } else {
           console.log('No response from the bot.');
         }
-        botState = 'Logging';
+        botState = 'Logging Data';
         updateConsole();
         await logToFile(logData); // Write log data to file
         botState = 'Idle';
