@@ -44,13 +44,21 @@ let blockedWordsCount = 0; // Counter for blocked words
 let botState = 'Idle';
 let botTag = 'undefined';
 
+// Variables to keep track of tokens used per trigger for input, output, and total tokens
+let inputTokensUsed = 0;
+let outputTokensUsed = 0;
+let totalTokensUsed = 0;
+let totalInputTokensUsed = 0;
+let totalOutputTokensUsed = 0;
 
+// Function to update the console output
 function updateConsole() {
   console.clear(); // Clear console before updating counters
   console.log('Connected as', botTag);
   console.log('Total pings received:', totalPings);
   console.log('Total blocked words found:', blockedWordsCount);
   console.log('Current Bot State:', botState);
+  console.log('Tokens Used:', totalTokensUsed, `(Input:${inputTokensUsed}/${totalInputTokensUsed}, Output:${outputTokensUsed}/${totalOutputTokensUsed})`);
 }
 
 const processMessages = async () => {
@@ -102,6 +110,7 @@ const processMessages = async () => {
         const data = await response.json();
 
         if (data.choices && data.choices.length > 0 && data.choices[0].text) {
+          outputTokensUsed = data.choices[0].text.split(' ').length;
           return data.choices[0].text.trim();
         } else {
           throw new Error('Invalid response format or empty choices array');
@@ -146,6 +155,7 @@ const processMessages = async () => {
 
         
         const input = originalMessage;
+        inputTokensUsed = input.split(' ').length; // Count input tokens
         const response = await sendChatMessage(input).catch(error => {
           console.error('Error sending message:', error);
           return null;
@@ -168,7 +178,16 @@ const processMessages = async () => {
             filteredResponse = filteredResponse.replace(regex, 'nt'); //temporary, seems we have something tripping up the filter, especially on words ending in "nt", like "want"
             //todo: figure out why that's happening, lol.
           });
-          
+
+
+          // Calculate total tokens used
+          totalTokensUsed += inputTokensUsed + outputTokensUsed;
+          totalInputTokensUsed += inputTokensUsed;
+          totalOutputTokensUsed += outputTokensUsed;
+
+          logData += `\nInput Tokens Used: ${inputTokensUsed}`; // Append input tokens used to log data
+          logData += `\nOutput Tokens Used: ${outputTokensUsed}`; // Append output tokens used to log data
+          logData += `\nTotal Tokens Used: ${totalTokensUsed} - Total Input:${totalInputTokensUsed} - Total Output:${totalOutputTokensUsed}`; // Append total tokens used to log data
           logData += '\n--';
           logData += `\nPre-Filter: ${response}`;
           logData += '\n--';
@@ -182,7 +201,6 @@ const processMessages = async () => {
               content: filteredResponse,
               allowedMentions: { repliedUser: false }
             });
-            //console.log('Replied to', message.author.tag, 'in channel');
             botState = 'Sent Message';
             updateConsole();
           } catch (error) {
@@ -196,6 +214,10 @@ const processMessages = async () => {
         await logToFile(logData); // Write log data to file
         botState = 'Idle';
         updateConsole();
+
+        // Reset tokens used for the next trigger
+        inputTokensUsed = 0;
+        outputTokensUsed = 0;
       }
     });
 
