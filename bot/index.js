@@ -65,6 +65,26 @@ function updateConsole() {
   console.log(`Output Tokens Used: ${outputTokensUsed} (Total Output: ${totalOutputTokensUsed})`);
 }
 
+const reactionLimit = 5; // Number of reactions to trigger saving to JSONL file
+
+const saveToJSONL = async (systemPrompt, userPrompt, aiResponse) => {
+  const data = {
+    messages: [
+      { role: 'system', content: systemPrompt },
+      { role: 'user', content: userPrompt },
+      { role: 'assistant', content: aiResponse }
+    ]
+  };
+
+  try {
+    const jsonlData = JSON.stringify(data) + '\n';
+    await fs.appendFile('saved_messages.jsonl', jsonlData);
+    console.log('Data saved to JSONL file.');
+  } catch (error) {
+    console.error('Error saving data to JSONL file:', error);
+  }
+};
+
 const processMessages = async () => {
   try {
     const config = await fs.readFile('config.json', 'utf8');
@@ -81,7 +101,7 @@ const processMessages = async () => {
           const severity = Number(columns[7].trim()); // severity_rating column
           return { word, severity };
         });
-    
+        
         const filteredWords = wordsWithSeverity.filter(entry => entry.severity >= severityCategory);
         return filteredWords;
       } catch (error) {
@@ -89,6 +109,21 @@ const processMessages = async () => {
         return [];
       }
     };
+    
+    client.on('messageReactionAdd', async (reaction, user) => {
+      if (
+        reaction.count >= reactionLimit &&
+        reaction.emoji.name === '🔥' &&
+        user.id !== client.user.id &&
+        reaction.message.author.id === client.user.id // Ensure reaction is on bot's message
+      ) {
+        const systemPrompt = config.systemPrompt;
+        const userPrompt = reaction.message.content;
+        const aiResponse = reaction.message.content; // Assuming the AI response is the same as the bot's message content
+  
+        await saveToJSONL(systemPrompt, userPrompt, aiResponse);
+      }
+    });
 
     const sendChatMessage = async (message) => {
       try {
@@ -114,7 +149,7 @@ const processMessages = async () => {
         const data = await response.json();
 
         if (data.choices && data.choices.length > 0 && data.choices[0].text) {
-          outputTokensUsed = data.choices[0].text.split(' ').length;
+          outputTokensUsed = data.choices[0].text.split(' ').length; //this is not an accurate token count but it will work fine enough for now
           return data.choices[0].text.trim();
         } else {
           throw new Error('Invalid response format or empty choices array');
