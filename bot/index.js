@@ -35,7 +35,7 @@ let logToFile = async (logData) => {
 
     //console.log('Log written to file.');
   } catch (error) {
-    console.error('Error writing to log file:', error);
+    latestError = 'Error writing to log file:', error;
   }
 };
 
@@ -51,18 +51,25 @@ let totalTokensUsed = 0;
 let totalInputTokensUsed = 0;
 let totalOutputTokensUsed = 0;
 let totalPromptTokensUsed = 0;
+let trainingDataFromMessage = 0;
+let latestError = `none!`;
 
 // Function to update the console output
 function updateConsole() {
   console.clear(); // Clear console before updating counters
   totalPromptTokensUsed = inputTokensUsed + outputTokensUsed;
   console.log('Connected as', botTag);
+  console.log('Current Bot State:', botState);
+  console.log('----');
   console.log('Total pings received:', totalPings);
   console.log('Total blocked words found:', blockedWordsCount);
-  console.log('Current Bot State:', botState);
+  console.log('Messages Saved for Training: ', trainingDataFromMessage);
+  console.log('----');
   console.log(`Total Tokens Used: ${totalTokensUsed}`);
   console.log(`Input Tokens Used: ${inputTokensUsed} (Total Input: ${totalInputTokensUsed})`);
   console.log(`Output Tokens Used: ${outputTokensUsed} (Total Output: ${totalOutputTokensUsed})`);
+  console.log('----')
+  console.log('Last Error:', latestError);
 }
 
 const reactionLimit = 5; // Number of reactions to trigger saving to JSONL file
@@ -81,14 +88,14 @@ const saveToJSONL = async (systemPrompt, userPrompt, aiResponse) => {
     await fs.appendFile('saved_messages.jsonl', jsonlData);
     console.log('Data saved to JSONL file.');
   } catch (error) {
-    console.error('Error saving data to JSONL file:', error);
+    latestError = 'Error saving data to JSONL file:', error;
   }
 };
 
 const processMessages = async () => {
   try {
     const config = await fs.readFile('config.json', 'utf8');
-    const { discordToken, openai, severityCategory, maxTokens, systemPrompt, allowedChannelId } = JSON.parse(config);
+    const { discordToken, openai, severityCategory, maxTokens, systemPrompt, allowedChannelId } = JSON.parse(config); //get all the settings
     const { apiKey, modelId } = openai;
 
     const getBlockedWords = async (severityCategory) => {
@@ -105,12 +112,10 @@ const processMessages = async () => {
         const filteredWords = wordsWithSeverity.filter(entry => entry.severity >= severityCategory);
         return filteredWords;
       } catch (error) {
-        console.error('Error reading blocked words:', error);
+        latestError = 'Error reading blocked words:', error;
         return [];
       }
     };
-    
-
 
     const sendChatMessage = async (message) => {
       try {
@@ -142,7 +147,7 @@ const processMessages = async () => {
           throw new Error('Invalid response format or empty choices array');
         }
       } catch (error) {
-        console.error('OpenAI API Issue:', error);
+        latestError = 'OpenAI API Issue:', error;
         return '[OpenAI API Error]';
       }
     };
@@ -183,7 +188,7 @@ const processMessages = async () => {
         const input = originalMessage;
         inputTokensUsed = input.split(' ').length; // Count input tokens
         const response = await sendChatMessage(input).catch(error => {
-          console.error('Error sending message:', error);
+          latestError = 'Error sending message:', error;
           return null;
         });
 
@@ -212,6 +217,7 @@ const processMessages = async () => {
               user.id !== client.user.id &&
               reaction.message.author.id === client.user.id // Ensure reaction is on bot's message
             ) {
+              trainingDataFromMessage++;
               botState = 'Logging for Training';
               updateConsole();
               const systemPrompt = config.systemPrompt;
@@ -246,7 +252,7 @@ const processMessages = async () => {
             botState = 'Sent Message';
             updateConsole();
           } catch (error) {
-            console.error('Error replying to user in channel:', error);
+            latestError = 'Error replying to user in channel:', error;
           }
         } else {
           console.log('No response from the bot.');
@@ -265,7 +271,7 @@ const processMessages = async () => {
 
     await client.login(discordToken);
   } catch (error) {
-    console.error('Error:', error);
+    latestError = 'Error:', error;
   }
 };
 
