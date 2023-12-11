@@ -110,20 +110,7 @@ const processMessages = async () => {
       }
     };
     
-    client.on('messageReactionAdd', async (reaction, user) => {
-      if (
-        reaction.count >= reactionLimit &&
-        reaction.emoji.name === '🔥' &&
-        user.id !== client.user.id &&
-        reaction.message.author.id === client.user.id // Ensure reaction is on bot's message
-      ) {
-        const systemPrompt = config.systemPrompt;
-        const userPrompt = reaction.message.content;
-        const aiResponse = reaction.message.content; // Assuming the AI response is the same as the bot's message content
-  
-        await saveToJSONL(systemPrompt, userPrompt, aiResponse);
-      }
-    });
+
 
     const sendChatMessage = async (message) => {
       try {
@@ -216,6 +203,22 @@ const processMessages = async () => {
             }
             filteredResponse = filteredResponse.replace(regex, 'nt'); //temporary, seems we have something tripping up the filter, especially on words ending in "nt", like "want"
             //todo: figure out why that's happening, lol.
+          });
+
+          client.on('messageReactionAdd', async (reaction, user) => {
+            if (
+              reaction.count >= reactionLimit &&
+              reaction.emoji.name === '🔥' &&
+              user.id !== client.user.id &&
+              reaction.message.author.id === client.user.id // Ensure reaction is on bot's message
+            ) {
+              botState = 'Logging for Training';
+              updateConsole();
+              const systemPrompt = config.systemPrompt;
+              const userPrompt = originalMessage;
+              const aiResponse = filteredResponse; // Assuming the AI response is the same as the bot's message content
+              await saveToJSONL(systemPrompt, userPrompt, aiResponse);
+            }
           });
 
 
