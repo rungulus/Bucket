@@ -50,14 +50,14 @@ let outputTokensUsed = 0;
 let totalTokensUsed = 0;
 let totalInputTokensUsed = 0;
 let totalOutputTokensUsed = 0;
-let totalPromptTokensUsed = 0;
 let trainingDataFromMessage = 0;
 let latestError = `none!`;
 
 // Function to update the console output
 function updateConsole() {
   console.clear(); // Clear console before updating counters
-  totalPromptTokensUsed = inputTokensUsed + outputTokensUsed;
+  //welcome to console.log hell
+  //im sure there's a better way to do this
   console.log('Connected as', botTag);
   console.log('Current Bot State:', botState);
   console.log('----');
@@ -141,7 +141,7 @@ const processMessages = async () => {
         const data = await response.json();
 
         if (data.choices && data.choices.length > 0 && data.choices[0].text) {
-          outputTokensUsed = data.choices[0].text.split(' ').length; //this is not an accurate token count but it will work fine enough for now
+          outputTokensUsed = maxTokens; //this is not an accurate token count but it will work fine enough for now
           return data.choices[0].text.trim();
         } else {
           throw new Error('Invalid response format or empty choices array');
