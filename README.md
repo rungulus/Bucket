@@ -61,6 +61,8 @@ Training will also take a while, especially if you've given it a lot of data. Fo
 1. Rename `config.sample.json` to `config.json`, enter your Discord API key, and then just copy the rest of your settings from `validation/config.json`.
 
 2. Enter the ID of the channel you want the bot to monitor for pings and respond in into the `allowedChannelId` node.
+
+`allowedChannelId` can also be the ID of a thread, if that's more your speed.
  
 3. Open a terminal/command prompt in the validation folder and run `node index.js`
 
