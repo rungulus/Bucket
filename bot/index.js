@@ -136,12 +136,12 @@ const processMessages = async () => {
         if (!response.ok) {
           throw new Error(`API request failed with status ${response.status}`);
         }
-        
-        client.on('messageCreate', async (message) => {
-          if (message.channelId == allowedChannelId && message.mentions.has(client.user)){
-            message.channel.sendTyping();
-          }
-        });
+
+        // client.on('messageCreate', async (message) => {
+        //   if (message.channelId == allowedChannelId && message.mentions.has(client.user)){
+        //     message.channel.sendTyping();
+        //   }
+        // });
         const data = await response.json();
 
         if (data.choices && data.choices.length > 0 && data.choices[0].text) {
@@ -179,7 +179,7 @@ const processMessages = async () => {
       const content = message.content.toLowerCase().trim();
 
       if (message.mentions.has(client.user)) {
-        //message.channel.sendTyping();
+        message.channel.sendTyping();
         totalPings++;
         botState = `Activated by ${message.author.tag}`;
         updateConsole();
