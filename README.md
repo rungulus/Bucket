@@ -56,7 +56,7 @@ Training will also take a while, especially if you've given it a lot of data. Fo
 
 ## Step 4 - Releasing it into the wild (Discord)
 
-### Bucket will want to say slurs after a while. There's a filter in place which should block most if not all of them, and a well crafted system prompt will prevent them, but we will need a better solution for "ignoring" them from OpenAI's data.
+### Bucket will want to say slurs after a while. There's a filter in place which should block most if not all of them, and a well crafted system prompt will prevent some as well. We will need a better solution for "ignoring" them from OpenAI's data.
 
 1. Rename `config.sample.json` to `config.json`, enter your Discord API key, and then just copy the rest of your settings from `validation/config.json`.
 
