@@ -179,7 +179,7 @@ const processMessages = async () => {
       const content = message.content.toLowerCase().trim();
 
       if (message.mentions.has(client.user)) {
-        message.channel.sendTyping();
+        //message.channel.sendTyping();
         totalPings++;
         botState = `Activated by ${message.author.tag}`;
         updateConsole();
