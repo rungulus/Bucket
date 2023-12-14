@@ -60,17 +60,17 @@ function updateConsole() {
   //welcome to console.log hell
   //im sure there's a better way to do this
   console.log('Connected as', botTag);
-  console.log('Current Bot State:', botState);
-  console.log('----');
-  console.log('Total pings received:', totalPings);
-  console.log('Total blocked words found:', blockedWordsCount);
-  console.log('Messages Saved for Training: ', trainingDataFromMessage);
-  console.log('----');
-  console.log(`Total Tokens Used: ${totalTokensUsed}`);
-  console.log(`Input Tokens Used: ${inputTokensUsed} (Total Input: ${totalInputTokensUsed})`);
-  console.log(`Output Tokens Used: ${outputTokensUsed} (Total Output: ${totalOutputTokensUsed})`);
-  console.log('----')
-  console.log('Last Error:', latestError);
+  // console.log('Current Bot State:', botState);
+  // console.log('----');
+  // console.log('Total pings received:', totalPings);
+  // console.log('Total blocked words found:', blockedWordsCount);
+  // console.log('Messages Saved for Training: ', trainingDataFromMessage);
+  // console.log('----');
+  // console.log(`Total Tokens Used: ${totalTokensUsed}`);
+  // console.log(`Input Tokens Used: ${inputTokensUsed} (Total Input: ${totalInputTokensUsed})`);
+  // console.log(`Output Tokens Used: ${outputTokensUsed} (Total Output: ${totalOutputTokensUsed})`);
+  // console.log('----')
+  // console.log('Last Error:', latestError);
 }
 
 const reactionLimit = 3; // Number of reactions to trigger saving to JSONL file
@@ -126,16 +126,30 @@ const processMessages = async () => {
       try {
         botState = 'Waiting for AI';
         updateConsole();
-        const response = await openai.chat.completions.create({
+        const completions = await openai.chat.completions.create({
           messages: [
-          { role: "system", content: `${systemPrompt}` },
-          { role: "user", content: `${message}`}
-        ],
+            { role: "system", content: `${systemPrompt}` },
+            { role: "user", content: `${message}`}
+          ],
           model: `${modelId}`,
         });
+    
+        console.log(completions); // Output the full response for inspection
+    
+        if (completions.choices && completions.choices.length > 0) {
+          const messageObject = completions.choices[0].message[0];
+          console.log('Message Object:', messageObject); // Output the message object
+    
+          if (messageObject && messageObject.content !== undefined) {
+            const responseText = messageObject.content;
+            console.log('Response Text:', responseText);
+          }
+        }
 
-        if (!response.ok) {
-          throw new Error(`API request failed with status ${response.status}`);
+        const response = completions.data.choices[0].text;
+
+        if (!completions.ok) {
+          throw new Error(`API request failed with status ${completions.status}`);
         }
         const data = await response.json();
     
