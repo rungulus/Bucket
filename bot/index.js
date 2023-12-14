@@ -72,7 +72,7 @@ function updateConsole() {
   console.log('Last Error:', latestError);
 }
 
-const reactionLimit = 5; // Number of reactions to trigger saving to JSONL file
+const reactionLimit = 3; // Number of reactions to trigger saving to JSONL file
 
 const saveToJSONL = async (systemPrompt, userPrompt, aiResponse) => {
   const data = {

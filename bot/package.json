@@ -1,6 +1,7 @@
 {
   "dependencies": {
     "discord.js": "^14.14.1",
-    "node-fetch": "^3.3.2"
+    "node-fetch": "^3.3.2",
+    "openai": "^4.21.0"
   }
 }
