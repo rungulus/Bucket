@@ -41,10 +41,10 @@ let logToFile = async (logData) => {
 
     if (!fileStats || fileStats.size >= maxLogFileSize) {
       // Create a new log file if the current one is too large or doesn't exist
-      await fs.writeFileSync(logFileName, `${logData}\n`);
+      await fs.appendFileSync(logFileName, `${logData}\n`);
     } else {
       // Append to the current log file
-      await fs.writeFileSync(logFileName, `${logData}\n`, { flag: 'a' });
+      await fs.appendFileSync(logFileName, `${logData}\n`);
     }
 
     //console.log('Log written to file.');
