@@ -1,6 +1,19 @@
-const fs = require('fs').promises;
-const { Client, GatewayIntentBits } = require('discord.js');
-const OpenAI = require('openai');
+// const fs = require('fs').promises;
+//const { Client, GatewayIntentBits } = require('discord.js');
+// const OpenAI = require('openai');
+
+import fs from "fs";
+import OpenAI from "openai";
+import Discord from "discord.js";
+const { Client, GatewayIntentBits } = Discord;
+
+const config = await fs.readFileSync('config.json', 'utf8');
+const { discordToken, openaiapi, severityCategory, maxTokens, systemPrompt, allowedChannelId } = JSON.parse(config); //get all the settings
+const { apiKey, modelId } = openaiapi;
+
+const openai = new OpenAI({
+  apiKey: `${apiKey}`
+});
 
 let fetch;
 try {
@@ -16,7 +29,7 @@ let logToFile = async (logData) => {
   const currentDate = new Date().toISOString().slice(0, 10); // Get current date for log file name
 
   try {
-    await fs.mkdir(logDirectory, { recursive: true }); // Create logs directory if it doesn't exist
+    await fs.mkdirSync(logDirectory, { recursive: true }); // Create logs directory if it doesn't exist
     const logFileName = `${logDirectory}/bot_logs_${currentDate}.txt`;
     
     let fileStats;
@@ -28,15 +41,15 @@ let logToFile = async (logData) => {
 
     if (!fileStats || fileStats.size >= maxLogFileSize) {
       // Create a new log file if the current one is too large or doesn't exist
-      await fs.writeFile(logFileName, `${logData}\n`);
+      await fs.writeFileSync(logFileName, `${logData}\n`);
     } else {
       // Append to the current log file
-      await fs.writeFile(logFileName, `${logData}\n`, { flag: 'a' });
+      await fs.writeFileSync(logFileName, `${logData}\n`, { flag: 'a' });
     }
 
     //console.log('Log written to file.');
   } catch (error) {
-    latestError = 'Error writing to log file:', error;
+    console.log('Error writing to log file:', error);
   }
 };
 
@@ -56,21 +69,21 @@ let latestError = `none!`;
 
 // Function to update the console output
 function updateConsole() {
-  //console.clear(); // Clear console before updating counters
+  console.clear(); // Clear console before updating counters
   //welcome to console.log hell
   //im sure there's a better way to do this
   console.log('Connected as', botTag);
-  // console.log('Current Bot State:', botState);
-  // console.log('----');
-  // console.log('Total pings received:', totalPings);
-  // console.log('Total blocked words found:', blockedWordsCount);
-  // console.log('Messages Saved for Training: ', trainingDataFromMessage);
-  // console.log('----');
-  // console.log(`Total Tokens Used: ${totalTokensUsed}`);
-  // console.log(`Input Tokens Used: ${inputTokensUsed} (Total Input: ${totalInputTokensUsed})`);
-  // console.log(`Output Tokens Used: ${outputTokensUsed} (Total Output: ${totalOutputTokensUsed})`);
-  // console.log('----')
-  // console.log('Last Error:', latestError);
+  console.log('Current Bot State:', botState);
+  console.log('----');
+  console.log('Total pings received:', totalPings);
+  console.log('Total blocked words found:', blockedWordsCount);
+  console.log('Messages Saved for Training: ', trainingDataFromMessage);
+  console.log('----');
+  console.log(`Total Tokens Used: ${totalTokensUsed}`);
+  console.log(`Input Tokens Used: ${inputTokensUsed} (Total Input: ${totalInputTokensUsed})`);
+  console.log(`Output Tokens Used: ${outputTokensUsed} (Total Output: ${totalOutputTokensUsed})`);
+  console.log('----')
+  console.log('Last Error:', latestError);
 }
 
 const reactionLimit = 3; // Number of reactions to trigger saving to JSONL file
@@ -86,26 +99,18 @@ const saveToJSONL = async (systemPrompt, userPrompt, aiResponse) => {
 
   try {
     const jsonlData = JSON.stringify(data) + '\n';
-    await fs.appendFile('saved_messages.jsonl', jsonlData);
+    await fs.appendFileSync('saved_messages.jsonl', jsonlData);
     console.log('Data saved to JSONL file.');
   } catch (error) {
-    latestError = 'Error saving data to JSONL file:', error;
+    console.log('Error saving data to JSONL file:', error);
   }
 };
 
 const processMessages = async () => {
   try {
-    const config = await fs.readFile('config.json', 'utf8');
-    const { discordToken, openaiapi, severityCategory, maxTokens, systemPrompt, allowedChannelId } = JSON.parse(config); //get all the settings
-    const { apiKey, modelId } = openaiapi;
-
-    const openai = new OpenAI({
-      apiKey: `${apiKey}`
-    });
-
     const getBlockedWords = async (severityCategory) => {
       try {
-        const csvData = await fs.readFile('blockedwords.csv', 'utf8');
+        const csvData = await fs.readFileSync('blockedwords.csv', 'utf8');
         const rows = csvData.split('\n').slice(1); // Skip header row
         const wordsWithSeverity = rows.map(row => {
           const columns = row.split(',');
@@ -117,7 +122,7 @@ const processMessages = async () => {
         const filteredWords = wordsWithSeverity.filter(entry => entry.severity >= severityCategory);
         return filteredWords;
       } catch (error) {
-        latestError = 'Error reading blocked words:', error;
+        console.log('Error reading blocked words:', error);
         return [];
       }
     };
@@ -133,37 +138,20 @@ const processMessages = async () => {
           ],
           model: `${modelId}`,
         });
-    
-        console.log(completions); // Output the full response for inspection
-    
+        
+        // console.log(completions);
+        // console.log(completions.choices); 
         if (completions.choices && completions.choices.length > 0) {
-          const messageObject = completions.choices[0].message[0];
-          console.log('Message Object:', messageObject); // Output the message object
-    
-          if (messageObject && messageObject.content !== undefined) {
-            const responseText = messageObject.content;
-            console.log('Response Text:', responseText);
-          }
-        }
-
-        const response = completions.data.choices[0].text;
-
-        if (!completions.ok) {
-          throw new Error(`API request failed with status ${completions.status}`);
-        }
-        const data = await response.json();
-    
-        console.log('Data from API:', data); // Log the API response for more details
-    
-        if (data.choices && data.choices.length > 0 && data.choices[0].text) {
-          outputTokensUsed = maxTokens;
-          return data.choices[0].text.trim();
+          const responseContent = completions.choices[0].message.content;
+          console.log('Response Content:', responseContent);
+          return responseContent;
         } else {
-          throw new Error('Invalid response format or empty choices array');
+          console.log('No valid response received from the bot.');
+          return '[OpenAI Error - No valid response]';
         }
       } catch (error) {
-        console.error('OpenAI API Issue:', error);
-        return '[OpenAI API Error]';
+        //console.error('OpenAI API Issue:', error);
+        return "[Generic Error - probably OpenAI]";
       }
     };
 
@@ -203,9 +191,20 @@ const processMessages = async () => {
         const input = originalMessage;
         inputTokensUsed = input.split(' ').length; // Count input tokens
         const response = await sendChatMessage(input).catch(error => {
-          latestError = 'Error sending message:', error;
+          console.log('Error sending message:', error);
           return null;
         });
+        
+        if (response && response.length > 0 && response[0].message && response[0].message.content) {
+          botState = 'Processing Reply';
+          updateConsole();
+          const filteredResponse = response[0].message.content;
+          // Further processing and sending the filteredResponse
+        } else {
+          console.log('No valid response received from the bot.');
+          // Handle this case according to your requirements
+        }
+        
 
         if (response) {
           botState = 'Processing Reply';
@@ -266,7 +265,7 @@ const processMessages = async () => {
             botState = 'Sent Message';
             updateConsole();
           } catch (error) {
-            latestError = 'Error replying to user in channel:', error;
+            console.log('Error replying to user in channel:', error);
           }
         } else {
           console.log('No response from the bot.');
@@ -285,7 +284,7 @@ const processMessages = async () => {
 
     await client.login(discordToken);
   } catch (error) {
-    latestError = 'Error:', error;
+    console.log('Error:', error);
   }
 };
 
