@@ -1,11 +1,7 @@
-// const fs = require('fs').promises;
-//const { Client, GatewayIntentBits } = require('discord.js');
-// const OpenAI = require('openai');
-
 import fs from "fs";
 import OpenAI from "openai";
 import Discord from "discord.js";
-const { Client, GatewayIntentBits } = Discord;
+const { Client, GatewayIntentBits } = Discord; //workaround because discord.js doesn't like being imported
 
 const config = await fs.readFileSync('config.json', 'utf8');
 const { discordToken, openaiapi, severityCategory, maxTokens, systemPrompt, allowedChannelId } = JSON.parse(config); //get all the settings
@@ -36,15 +32,17 @@ let logToFile = async (logData) => {
     try {
       fileStats = await fs.stat(logFileName);
     } catch (err) {
-      // File does not exist, create a new one
+      botState = 'Creating Log File';
     }
 
     if (!fileStats || fileStats.size >= maxLogFileSize) {
       // Create a new log file if the current one is too large or doesn't exist
       await fs.appendFileSync(logFileName, `${logData}\n`);
+      botState = 'Writing to log file';
     } else {
       // Append to the current log file
       await fs.appendFileSync(logFileName, `${logData}\n`);
+      botState = 'Writing to log file';
     }
 
     //console.log('Log written to file.');
@@ -53,21 +51,13 @@ let logToFile = async (logData) => {
   }
 };
 
-let totalPings = 0; // Counter for total pings received
-let blockedWordsCount = 0; // Counter for blocked words
+
 let botState = 'Idle';
-let botTag = 'undefined';
-
-// Variables to keep track of tokens used per trigger for input, output, and total tokens
-let inputTokensUsed = 0;
-let outputTokensUsed = 0;
-let totalTokensUsed = 0;
-let totalInputTokensUsed = 0;
-let totalOutputTokensUsed = 0;
-let trainingDataFromMessage = 0;
+let botTag = '[connecting to discord]'; 
+// Variables to keep track of the console output
+let inputTokensUsed, outputTokensUsed,totalTokensUsed,totalInputTokensUsed,totalOutputTokensUsed,trainingDataFromMessage,totalPings,blockedWordsCount = 0;
 let latestError = `none!`;
-
-// Function to update the console output
+// update the console
 function updateConsole() {
   console.clear(); // Clear console before updating counters
   //welcome to console.log hell
@@ -79,14 +69,16 @@ function updateConsole() {
   console.log('Total blocked words found:', blockedWordsCount);
   console.log('Messages Saved for Training: ', trainingDataFromMessage);
   console.log('----');
-  console.log(`Total Tokens Used: ${totalTokensUsed}`);
-  console.log(`Input Tokens Used: ${inputTokensUsed} (Total Input: ${totalInputTokensUsed})`);
-  console.log(`Output Tokens Used: ${outputTokensUsed} (Total Output: ${totalOutputTokensUsed})`);
-  console.log('----')
+  //remove token counts for now, we can get this from the api but i'm not sure how right now
+
+  // console.log(`Total Tokens Used: ${totalTokensUsed}`);
+  // console.log(`Input Tokens Used: ${inputTokensUsed} (Total Input: ${totalInputTokensUsed})`);
+  // console.log(`Output Tokens Used: ${outputTokensUsed} (Total Output: ${totalOutputTokensUsed})`);
+  // console.log('----')
   console.log('Last Error:', latestError);
 }
 
-const reactionLimit = 3; // Number of reactions to trigger saving to JSONL file
+const reactionLimit = 3; // Number of reactions to trigger training data save
 
 const saveToJSONL = async (systemPrompt, userPrompt, aiResponse) => {
   const data = {
@@ -94,6 +86,7 @@ const saveToJSONL = async (systemPrompt, userPrompt, aiResponse) => {
       { role: 'system', content: systemPrompt },
       { role: 'user', content: userPrompt },
       { role: 'assistant', content: aiResponse }
+      //try to save in chat completion format
     ]
   };
 
@@ -110,6 +103,7 @@ const processMessages = async () => {
   try {
     const getBlockedWords = async (severityCategory) => {
       try {
+        //block slurs
         const csvData = await fs.readFileSync('blockedwords.csv', 'utf8');
         const rows = csvData.split('\n').slice(1); // Skip header row
         const wordsWithSeverity = rows.map(row => {
@@ -119,6 +113,7 @@ const processMessages = async () => {
           return { word, severity };
         });
         
+        //only block stuff greater than (or equal to) the severity
         const filteredWords = wordsWithSeverity.filter(entry => entry.severity >= severityCategory);
         return filteredWords;
       } catch (error) {
@@ -136,21 +131,18 @@ const processMessages = async () => {
             { role: "system", content: `${systemPrompt}` },
             { role: "user", content: `${message}`}
           ],
-          model: `${modelId}`,
+          model: `${modelId}`
         });
         
-        // console.log(completions);
-        // console.log(completions.choices); 
         if (completions.choices && completions.choices.length > 0) {
           const responseContent = completions.choices[0].message.content;
           console.log('Response Content:', responseContent);
           return responseContent;
         } else {
           console.log('No valid response received from the bot.');
-          return '[OpenAI Error - No valid response]';
+          return '[OpenAI Error - No valid response]'; //need a better way to log these to the console...
         }
       } catch (error) {
-        //console.error('OpenAI API Issue:', error);
         return "[Generic Error - probably OpenAI]";
       }
     };
@@ -175,7 +167,7 @@ const processMessages = async () => {
         return;
       }
       
-      const content = message.content.toLowerCase().trim();
+      const content = message.content.toLowerCase().trim(); 
 
       if (message.mentions.has(client.user)) {
         message.channel.sendTyping();
@@ -198,14 +190,10 @@ const processMessages = async () => {
         if (response && response.length > 0 && response[0].message && response[0].message.content) {
           botState = 'Processing Reply';
           updateConsole();
-          const filteredResponse = response[0].message.content;
-          // Further processing and sending the filteredResponse
         } else {
           console.log('No valid response received from the bot.');
-          // Handle this case according to your requirements
         }
         
-
         if (response) {
           botState = 'Processing Reply';
           updateConsole();
@@ -214,7 +202,8 @@ const processMessages = async () => {
             .replace(/@/g, '@\u200B') // invisible space so bot cannot ping normally
             .replace(/(https?:\/\/[^\s]+)/gi, '~~link removed~~'); // remove links
 
-          // Replace blocked words based on severity category
+
+          //make sure we do censoring before we do emoji matching
           blockedWords.forEach(word => {
             const regex = new RegExp(`\\b${word.word}\\b|${word.word}(?=[\\W]|$)`, 'gi');
             if (filteredResponse.match(regex)) {
@@ -223,6 +212,30 @@ const processMessages = async () => {
             filteredResponse = filteredResponse.replace(regex, 'nt'); //temporary, seems we have something tripping up the filter, especially on words ending in "nt", like "want"
           });
 
+          // regex to match emotes like :this:
+          const emojiRegex = /<:[a-zA-Z0-9_]+:/g;
+
+          // check to see if they're in the response so far
+          const matchedEmojis = filteredResponse.match(emojiRegex);
+
+          if (matchedEmojis) {
+            //find each emote 
+            matchedEmojis.forEach(match => {
+              const emojiName = match.split(':')[1]; // remove the colons, discord.js doesn't want them
+              const emoji = client.emojis.cache.find(emoji => emoji.name === emojiName); //then just search for the emote
+              //this should reset each message, but we'll find out if it doesnt.
+              if (emoji) {
+                // If the emoji is found, replace the matched string with the actual emoji
+                filteredResponse = filteredResponse.replace(match, emoji.toString());
+              }
+              // we do not care if the emote is not found (its funnier), so we don't handle this case.
+
+            });
+          }
+    
+
+          //this doesn't work!
+          //we may need to check for this differently.
           client.on('messageReactionAdd', async (reaction, user) => {
             if (
               reaction.count >= reactionLimit &&
@@ -241,15 +254,15 @@ const processMessages = async () => {
           });
 
 
-          // Calculate total tokens used
-          totalTokensUsed += inputTokensUsed + outputTokensUsed;
-          totalInputTokensUsed += inputTokensUsed;
-          totalOutputTokensUsed += outputTokensUsed;
+          // // Calculate total tokens used
+          // totalTokensUsed += inputTokensUsed + outputTokensUsed;
+          // totalInputTokensUsed += inputTokensUsed;
+          // totalOutputTokensUsed += outputTokensUsed;
 
-          logData += `\nInput Tokens Used: ${inputTokensUsed}`; // Append input tokens used to log data
-          logData += `\nOutput Tokens Used: ${outputTokensUsed}`; // Append output tokens used to log data
-          logData += `\nTotal Tokens Used: ${totalTokensUsed} - Total Input:${totalInputTokensUsed} - Total Output:${totalOutputTokensUsed}`; // Append total tokens used to log data
-          logData += '\n--';
+          // logData += `\nInput Tokens Used: ${inputTokensUsed}`; // Append input tokens used to log data
+          // logData += `\nOutput Tokens Used: ${outputTokensUsed}`; // Append output tokens used to log data
+          // logData += `\nTotal Tokens Used: ${totalTokensUsed} - Total Input:${totalInputTokensUsed} - Total Output:${totalOutputTokensUsed}`; // Append total tokens used to log data
+          // logData += '\n--';
           logData += `\nPre-Filter: ${response}`;
           logData += '\n--';
           logData += `\nFiltered: ${filteredResponse}`;
