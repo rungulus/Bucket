@@ -50,7 +50,7 @@ Training will also take a while, especially if you've given it a lot of data. Fo
 
 2. Also, specify your token amount if you want, this controls how long the messages that the bot replies with are. 
 
-3. Open a terminal/command prompt in the validation folder and run `node chatbot.js`
+3. Open a terminal/command prompt in the `/validation/` folder and run `node chatbot.js`
 
 4. You can now chat with the bot you made! Make sure it's a bit normal, and retrain your model as needed.
 
@@ -64,11 +64,11 @@ Training will also take a while, especially if you've given it a lot of data. Fo
 
 `allowedChannelId` can also be the ID of a thread, if that's more your speed.
  
-3. Open a terminal/command prompt in the validation folder and run `node bucket2.mjs`
+3. Open a terminal/command prompt in the `/bot/` folder and run `node bucket2.mjs`
 
 If you're having issues with the bot, make sure the dependencies are installed by running `npm install discord.js node-fetch openai`
 
-Bucket will log responses, and who triggered the bot in the `/logs/` folder. 
+Bucket will log responses, and who triggered the bot in the `/bot/logs/` folder. 
 
 ## Future Plans
 - Better Emote Support
