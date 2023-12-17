@@ -4,8 +4,8 @@
     "apiKey": "YOUR_OPENAI_API_KEY",
     "modelId": "YOUR_MODEL_ID"
   },
-  "severityCategory": 2,
-  "maxTokens": 15,
+  "severityCategory": 2.1,
+  "maxTokens": 25,
   "systemPrompt": "SYSTEM-PROMPT",
   "allowedChannelId": "CHANNEL-ID"
 }
