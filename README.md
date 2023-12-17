@@ -64,11 +64,15 @@ Training will also take a while, especially if you've given it a lot of data. Fo
 
 `allowedChannelId` can also be the ID of a thread, if that's more your speed.
  
-3. Open a terminal/command prompt in the validation folder and run `node index.js`
+3. Open a terminal/command prompt in the validation folder and run `node bucket2.mjs`
 
-If you're having issues with the bot, make sure the dependencies are installed by running `npm install discord.js node-fetch`
+If you're having issues with the bot, make sure the dependencies are installed by running `npm install discord.js node-fetch openai`
 
 Bucket will log responses, and who triggered the bot in the `/logs/` folder. 
 
-## That's all!
-If you see an issue, or want to make an improvement please feel free!
+## Future Plans
+- Better Emote Support
+- Working "train from bot response" system
+
+## Contributing
+Feel Free! If you want to change something just open a PR.

@@ -1,6 +1,6 @@
 {
   "discordToken": "YOUR_DISCORD_TOKEN",
-  "openai": {
+  "openaiapi": {
     "apiKey": "YOUR_OPENAI_API_KEY",
     "modelId": "YOUR_MODEL_ID"
   },
