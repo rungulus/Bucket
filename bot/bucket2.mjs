@@ -5,7 +5,7 @@ const { Client, GatewayIntentBits, Events, Partials } = Discord; //workaround be
 
 const config = await fs.readFileSync('config.json', 'utf8');
 const { discordToken, openaiapi, severityCategory, allowedChannelId, trainEmoji, reactionCount, removePings, removeLinks } = JSON.parse(config); //get all the settings
-const { apiKey, modelId, maxTokens, temperature, presencepPenalty, frequencyPenalty, systemPrompt } = openaiapi;
+const { apiKey, modelId, maxTokens, temperature, presencePenalty, frequencyPenalty, systemPrompt } = openaiapi;
 
 const openai = new OpenAI({
   apiKey: `${apiKey}`
@@ -140,7 +140,7 @@ const processMessages = async () => {
           ],
           model: `${modelId}`,
           frequency_penalty: frequencyPenalty,
-          presence_penalty: presencepPenalty,
+          presence_penalty: presencePenalty,
           temperature: temperature,
           max_tokens: maxTokens
         });
