@@ -25,27 +25,27 @@ let logToFile = async (logData) => {
   const currentDate = new Date().toISOString().slice(0, 10); // Get current date for log file name
 
   try {
-    await fs.mkdirSync(logDirectory, { recursive: true }); // Create logs directory if it doesn't exist
+    await fs.promises.mkdir(logDirectory, { recursive: true }); // Use fs.promises for asynchronous operations
     const logFileName = `${logDirectory}/bot_logs_${currentDate}.txt`;
-    
+
     let fileStats;
     try {
-      fileStats = await fs.stat(logFileName);
+      fileStats = await fs.promises.stat(logFileName);
     } catch (err) {
       botState = 'Creating Log File';
     }
 
+    const logContent = `${logData}\n`;
+
     if (!fileStats || fileStats.size >= maxLogFileSize) {
       // Create a new log file if the current one is too large or doesn't exist
-      await fs.appendFileSync(logFileName, `${logData}\n`);
-      botState = 'Writing to log file';
+      await fs.promises.writeFile(logFileName, logContent);
     } else {
       // Append to the current log file
-      await fs.appendFileSync(logFileName, `${logData}\n`);
-      botState = 'Writing to log file';
+      await fs.promises.appendFile(logFileName, logContent);
     }
 
-    //console.log('Log written to file.');
+    botState = 'Writing to log file';
   } catch (error) {
     console.log('Error writing to log file:', error);
   }
