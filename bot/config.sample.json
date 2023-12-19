@@ -6,7 +6,7 @@
   "openaiapi": {
     "apiKey": "your openai api key here",
     "modelId": "your fine tuned model id",
-    "maxTokens": 50,
+    "maxTokens": 100,
     "temperature": 0.6,
     "presencePenalty": 0.6,
     "frequencyPenalty": 1,

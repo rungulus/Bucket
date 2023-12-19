@@ -40,38 +40,52 @@ You can only use `gpt-3.5-turbo-xxxx` models for fine tuning with the data you'v
 
 Training will also take a while, especially if you've given it a lot of data. For me training a GPT3.5 model with ~2048 lines of data will run you about $2.
 
-## Step 3 - Validation
 
-1. Rename `config.sample.json` to `config.json` and enter your API Key, Model ID, and system prompt into the specified fields
-
-> **A note on system prompts**
-> 
-> While you're in `config.json`, you need to add a system prompt. This sets the guidelines and "boundaries" that the AI *mostly* follows. You can use the same system prompt that was used in `jsoncleaner.py`, but now would be the best time to mess around and see what gives you the best results. 
-
-2. Also, specify your token amount if you want, this controls how long the messages that the bot replies with are. 
-
-3. Open a terminal/command prompt in the `/validation/` folder and run `node chatbot.js`
-
-4. You can now chat with the bot you made! Make sure it's a bit normal, and retrain your model as needed.
 
 ## Step 4 - Releasing it into the wild (Discord)
 
 ### Bucket will want to say slurs after a while. There's a filter in place which should block most if not all of them, and a well crafted system prompt will prevent some as well. We will need a better solution for "ignoring" them from OpenAI's data.
 
-1. Rename `config.sample.json` to `config.json`, enter your Discord API key, and then just copy the rest of your settings from `validation/config.json`.
+1. Rename `config.sample.json` to `config.json`, and get ready to enter a lot of settings:
 
-2. Enter the ID of the channel you want the bot to monitor for pings and respond in into the `allowedChannelId` node.
+- discordToken: your discord api key you got from the developer's portal
+- allowedChannelId: the channel you want the bot to look at for pings (can be a thread)
+- trainEmoji: an emoji reaction you want the bot to watch for to save the response (and original message) for future training
+- reactionCount: how many reactions until the bot should save the message
+- openaiapi section:
+  - apiKey: your OpenAI api key
+  - modelId: your fine tuned model id
+  - maxTokens: how many tokens your bot can use per response
+    - default: 100
+<hr>
 
-`allowedChannelId` can also be the ID of a thread, if that's more your speed.
- 
-3. Open a terminal/command prompt in the `/bot/` folder and run `node bucket2.mjs`
+  > you should leave these settings as is, but here is what these do
+  - temperature: how "random" you want the bot to be, can be 0-2. lower is less "random"
+    - default: 0.6
+  - presencePenalty: how "on topic" the bot should be, can be 0-2. lower is more "on topic"
+    - default: 0.6
+  - frequencyPenalty: how "repetitive" the bot should be, can be 0-2. lower is more "repetitive"
+    - default: 1
+  - severityCategory: what "level" of slurs and bad words should we filter, can be 0-3.
+    - default: 2.2
+  <hr>
+- systemPrompt: your system prompt that the ai will use
+    > **A note on system prompts**
+    > <hr>
+    > While you're in `config.json`, you need to add a system prompt. This sets the guidelines and "boundaries" that the AI *mostly* follows. You can use the same system prompt that was used in `jsoncleaner.py`, but now would be the best time to mess around and see what gives you the best results. 
 
-If you're having issues with the bot, make sure the dependencies are installed by running `npm install discord.js node-fetch openai`
+- removePings: can be 0 or 1, 1 to remove pings, 0 to allow them
+- removeLinks: can be 0 or 1, 1 to remove links, 0 to allow them
+<hr>
+2. Open a terminal/command prompt in the `/bot/` folder and run `node bucket2.mjs`
+
+If you're having issues with the bot, make sure the dependencies are installed by running
+
+> `npm install discord.js node-fetch openai`
 
 Bucket will log responses, and who triggered the bot in the `/bot/logs/` folder. 
 
 ## Future Plans
-- Better Emote Support
 - Working "train from bot response" system
 
 ## Contributing
