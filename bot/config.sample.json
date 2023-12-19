@@ -1,11 +1,18 @@
 {
-  "discordToken": "YOUR_DISCORD_TOKEN",
+  "discordToken": "your discord bot token here",
+  "allowedChannelId": "channel/thread id for bot",
+  "trainEmoji": "🔥",
+  "reactionCount": 3,
   "openaiapi": {
-    "apiKey": "YOUR_OPENAI_API_KEY",
-    "modelId": "YOUR_MODEL_ID"
+    "apiKey": "your openai api key here",
+    "modelId": "your fine tuned model id",
+    "maxTokens": 50,
+    "temperature": 0.6,
+    "presencePenalty": 0.6,
+    "frequencyPenalty": 1,
+    "systemPrompt": "your system prompt here"
   },
-  "severityCategory": 2.1,
-  "maxTokens": 25,
-  "systemPrompt": "SYSTEM-PROMPT",
-  "allowedChannelId": "CHANNEL-ID"
+  "severityCategory": 2.2,
+  "removePings": 1,
+  "removeLinks": 0
 }

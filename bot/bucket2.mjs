@@ -4,8 +4,8 @@ import Discord from "discord.js";
 const { Client, GatewayIntentBits, Events, Partials } = Discord; //workaround because discord.js doesn't like being imported
 
 const config = await fs.readFileSync('config.json', 'utf8');
-const { discordToken, openaiapi, severityCategory, maxTokens, systemPrompt, allowedChannelId } = JSON.parse(config); //get all the settings
-const { apiKey, modelId } = openaiapi;
+const { discordToken, openaiapi, severityCategory, allowedChannelId, trainEmoji, reactionCount, removePings, removeLinks } = JSON.parse(config); //get all the settings
+const { apiKey, modelId, maxTokens, temperature, presencepPenalty, frequencyPenalty, systemPrompt } = openaiapi;
 
 const openai = new OpenAI({
   apiKey: `${apiKey}`
@@ -55,11 +55,17 @@ let logToFile = async (logData) => {
 let botState = 'Idle';
 let botTag = '[connecting to discord]'; 
 // Variables to keep track of the console output
-let inputTokensUsed, outputTokensUsed,totalTokensUsed,totalInputTokensUsed,totalOutputTokensUsed = 0;
+let inputTokensUsed = 0;
+let outputTokensUsed = 0;
+let totalTokensUsed = 0;
+let totalInputTokensUsed= 0;
+let totalOutputTokensUsed = 0;
 let trainingDataFromMessage = 0;
 let totalPings= 0;
 let blockedWordsCount = 0;
 let latestError = `none!`;
+let filteredResponse; //out here so we can save it
+let originalMessage;
 // update the console
 function updateConsole() {
   console.clear(); // Clear console before updating counters
@@ -72,16 +78,13 @@ function updateConsole() {
   console.log('Total blocked words found:', blockedWordsCount);
   console.log('Messages Saved for Training: ', trainingDataFromMessage);
   console.log('----');
-  //remove token counts for now, we can get this from the api but i'm not sure how right now
-
-  // console.log(`Total Tokens Used: ${totalTokensUsed}`);
-  // console.log(`Input Tokens Used: ${inputTokensUsed} (Total Input: ${totalInputTokensUsed})`);
-  // console.log(`Output Tokens Used: ${outputTokensUsed} (Total Output: ${totalOutputTokensUsed})`);
-  // console.log('----')
+  console.log(`Total Tokens Used: ${totalTokensUsed}`);
+  console.log(`Input Tokens Used: ${inputTokensUsed} (Total Input: ${totalInputTokensUsed})`);
+  console.log(`Output Tokens Used: ${outputTokensUsed} (Total Output: ${totalOutputTokensUsed})`);
+  console.log('----')
   console.log('Last Error:', latestError);
+  
 }
-
-const reactionLimit = 3; // Number of reactions to trigger training data save
 
 const saveToJSONL = async (systemPrompt, userPrompt, aiResponse) => {
   const data = {
@@ -95,10 +98,10 @@ const saveToJSONL = async (systemPrompt, userPrompt, aiResponse) => {
 
   try {
     const jsonlData = JSON.stringify(data) + '\n';
-    await fs.appendFileSync('saved_messages.jsonl', jsonlData);
-    console.log('Data saved to JSONL file.');
+    await fs.appendFileSync('saved-messages.jsonl', jsonlData);
+    botState='Idle';
   } catch (error) {
-    console.log('Error saving data to JSONL file:', error);
+    latestError='Error saving data to JSONL file:', error;
   }
 };
 
@@ -135,21 +138,24 @@ const processMessages = async () => {
             { role: "user", content: `${message}`}
           ],
           model: `${modelId}`,
-          frequency_penalty: 1,
-          presence_penalty: 0.6,
-          temperature: 0.6,
-          max_tokens: 50
+          frequency_penalty: frequencyPenalty,
+          presence_penalty: presencepPenalty,
+          temperature: temperature,
+          max_tokens: maxTokens
         });
-
-
-        
+  
         if (completions.choices && completions.choices.length > 0) {
           const responseContent = completions.choices[0].message.content;
           console.log('Response Content:', responseContent);
+          outputTokensUsed = parseInt(completions.usage.completion_tokens);
+          totalOutputTokensUsed += outputTokensUsed;
+          inputTokensUsed = parseInt(completions.usage.prompt_tokens);
+          totalInputTokensUsed += inputTokensUsed;
+          totalTokensUsed += parseInt(completions.usage.total_tokens);
           return responseContent;
         } else {
           console.log('No valid response received from the bot.');
-          return '[OpenAI Error - No valid response]'; //need a better way to log these to the console...
+          return '[OpenAI Error - No valid response]';
         }
       } catch (error) {
         return "[Generic Error - probably OpenAI]";
@@ -157,7 +163,6 @@ const processMessages = async () => {
     };
 
     const blockedWords = await getBlockedWords(severityCategory);
-
 
     const client = new Client({
       intents: [
@@ -177,7 +182,22 @@ const processMessages = async () => {
       updateConsole();
     });
 
-
+    client.on(Events.MessageReactionAdd, async (reaction, user) => {
+      if (
+        reaction.count >= reactionCount &&
+        reaction.emoji.name === trainEmoji &&
+        user.id !== client.user.id &&
+        reaction.message.author.id === client.user.id // Ensure reaction is on bot's message
+      ) {
+        trainingDataFromMessage++;
+        botState = 'Logging for Training';
+        updateConsole();
+        // const systemPrompt = config.systemPrompt;
+        const userPrompt = originalMessage;
+        const aiResponse = filteredResponse; // Assuming the AI response is the same as the bot's message content
+        await saveToJSONL(systemPrompt, userPrompt, aiResponse);
+      }
+    });
 
     client.on('messageCreate', async (message) => {
       if (message.channelId !== allowedChannelId){
@@ -192,7 +212,7 @@ const processMessages = async () => {
         botState = `Activated by ${message.author.tag}`;
         updateConsole();
         const sender = message.author.tag;
-        const originalMessage = message.content.replace(/<@!\d+>/g, '').replace('<@1183327864624517120>', '').trim(); //dont send the ping to the ai
+        originalMessage = message.content.replace(/<@!\d+>/g, '').replace('<@1183327864624517120>', '').trim(); //dont send the ping to the ai
 
         let logData = `Sender: ${sender}\nOriginal Message: ${originalMessage}`;
 
@@ -204,23 +224,19 @@ const processMessages = async () => {
           return null;
         });
         
-        if (response && response.length > 0 && response[0].message && response[0].message.content) {
-          botState = 'Processing Reply';
-          updateConsole();
-        } else {
-          console.log('No valid response received from the bot.');
-        }
         
         if (response) {
           botState = 'Processing Reply';
           updateConsole();
-          let filteredResponse = response
-             .replace(/<@!\d+>/g, '') //remove ping tags
-             .replace(/@/g, '@\u200B') // invisible space so bot cannot ping normally
-            // .replace(/(https?:\/\/[^\s]+)/gi, '~~link removed~~'); // remove links
-
-
-          //make sure we do censoring before we do emoji matching
+          //1984 module
+          filteredResponse = response.replace(/<@!\d+>/g, '')//remove ping tags (<@bunchofnumbers>)
+          if (removeLinks == 1){
+            filteredResponse.replace(/(https?:\/\/[^\s]+)/gi, '~~link removed~~');//replace links with link removed
+          }
+          if (removePings == 1){
+            filteredResponse.replace(/@/g, '@\u200B');//place invisible space between @ and words so bot can't ping
+          }
+          //slur filtering
           blockedWords.forEach(word => {
             const regex = new RegExp(`\\b${word.word}\\b|${word.word}(?=[\\W]|$)`, 'gi');
             if (filteredResponse.match(regex)) {
@@ -229,14 +245,11 @@ const processMessages = async () => {
             filteredResponse = filteredResponse.replace(regex, 'nt'); //temporary, seems we have something tripping up the filter, especially on words ending in "nt", like "want"
           });
 
-          // regex to match emotes like :this:
+          //ok time to find some emojis
           const emojiRegex = /:[a-zA-Z0-9_]+:/g;
-
-          // check to see if they're in the response so far
           const matchedEmojis = filteredResponse.match(emojiRegex);
-
+          //if we found some, we need to do some work to let the bot send them
           if (matchedEmojis) {
-            //find each emote 
             matchedEmojis.forEach(match => {
               const emojiName = match.split(':')[1]; // remove the colons, discord.js doesn't want them
               const emoji = client.emojis.cache.find(emoji => emoji.name === emojiName); //then just search for the emote
@@ -246,35 +259,15 @@ const processMessages = async () => {
                 filteredResponse = filteredResponse.replace(match, emoji.toString());
               }
               // we do not care if the emote is not found (its funnier), so we don't handle this case.
-
             });
           }
           
-          client.on(Events.MessageReactionAdd, async (reaction, user) => {
-            if (
-              reaction.count >= reactionLimit &&
-              reaction.emoji.name === '🔥' &&
-              user.id !== client.user.id &&
-              reaction.message.author.id === client.user.id // Ensure reaction is on bot's message
-            ) {
-              trainingDataFromMessage++;
-              botState = 'Logging for Training';
-              updateConsole();
-              const systemPrompt = config.systemPrompt;
-              const userPrompt = originalMessage;
-              const aiResponse = filteredResponse; // Assuming the AI response is the same as the bot's message content
-              await saveToJSONL(systemPrompt, userPrompt, aiResponse);
-            }
-          });
-          // // Calculate total tokens used
-          // totalTokensUsed += inputTokensUsed + outputTokensUsed;
-          // totalInputTokensUsed += inputTokensUsed;
-          // totalOutputTokensUsed += outputTokensUsed;
 
-          // logData += `\nInput Tokens Used: ${inputTokensUsed}`; // Append input tokens used to log data
-          // logData += `\nOutput Tokens Used: ${outputTokensUsed}`; // Append output tokens used to log data
-          // logData += `\nTotal Tokens Used: ${totalTokensUsed} - Total Input:${totalInputTokensUsed} - Total Output:${totalOutputTokensUsed}`; // Append total tokens used to log data
-          // logData += '\n--';
+
+          logData += `\nInput Tokens Used: ${inputTokensUsed}`; // Append input tokens used to log data
+          logData += `\nOutput Tokens Used: ${outputTokensUsed}`; // Append output tokens used to log data
+          logData += `\nTotal Tokens Used: ${totalTokensUsed} - Total Input:${totalInputTokensUsed} - Total Output:${totalOutputTokensUsed}`; // Append total tokens used to log data
+          logData += '\n--';
           logData += `\nPre-Filter: ${response}`;
           logData += '\n--';
           logData += `\nFiltered: ${filteredResponse}`;
@@ -301,9 +294,7 @@ const processMessages = async () => {
         botState = 'Idle';
         updateConsole();
 
-        // Reset tokens used for the next trigger
-        inputTokensUsed = 0;
-        outputTokensUsed = 0;
+
       }
     });
 
