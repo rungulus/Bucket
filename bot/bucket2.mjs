@@ -53,15 +53,15 @@ let logToFile = async (logData) => {
 
 
 let botState = 'Idle';
-let botTag = '[connecting to discord]'; 
+let botTag = '[connecting to discord]';
 // Variables to keep track of the console output
 let inputTokensUsed = 0;
 let outputTokensUsed = 0;
 let totalTokensUsed = 0;
-let totalInputTokensUsed= 0;
+let totalInputTokensUsed = 0;
 let totalOutputTokensUsed = 0;
 let trainingDataFromMessage = 0;
-let totalPings= 0;
+let totalPings = 0;
 let blockedWordsCount = 0;
 let latestError = `none!`;
 let filteredResponse; //out here so we can save it
@@ -84,7 +84,7 @@ function updateConsole() {
   console.log(`Output Tokens Used: ${outputTokensUsed} (Total Output: ${totalOutputTokensUsed})`);
   console.log('----')
   console.log('Last Error:', latestError);
-  
+
 }
 
 const saveToJSONL = async (systemPrompt, userPrompt, aiResponse) => {
@@ -100,9 +100,9 @@ const saveToJSONL = async (systemPrompt, userPrompt, aiResponse) => {
   try {
     const jsonlData = JSON.stringify(data) + '\n';
     await fs.appendFileSync('saved-messages.jsonl', jsonlData);
-    botState='Idle';
+    botState = 'Idle';
   } catch (error) {
-    latestError='Error saving data to JSONL file:', error;
+    latestError = 'Error saving data to JSONL file:', error;
   }
 };
 
@@ -119,7 +119,7 @@ const processMessages = async () => {
           const severity = Number(columns[7].trim()); // severity_rating column
           return { word, severity };
         });
-        
+
         //only block stuff greater than (or equal to) the severity
         const filteredWords = wordsWithSeverity.filter(entry => entry.severity >= severityCategory);
         return filteredWords;
@@ -136,7 +136,7 @@ const processMessages = async () => {
         const completions = await openai.chat.completions.create({
           messages: [
             { role: "system", content: `${systemPrompt}` },
-            { role: "user", content: `${message}`}
+            { role: "user", content: `${message}` }
           ],
           model: `${modelId}`,
           frequency_penalty: frequencyPenalty,
@@ -144,7 +144,7 @@ const processMessages = async () => {
           temperature: temperature,
           max_tokens: maxTokens
         });
-  
+
         if (completions.choices && completions.choices.length > 0) {
           const responseContent = completions.choices[0].message.content;
           console.log('Response Content:', responseContent);
@@ -201,11 +201,11 @@ const processMessages = async () => {
     });
 
     client.on('messageCreate', async (message) => {
-      if (message.channelId !== allowedChannelId){
+      if (message.channelId !== allowedChannelId) {
         return;
       }
-      
-      const content = message.content.toLowerCase().trim(); 
+
+      const content = message.content.toLowerCase().trim();
 
       if (message.mentions.has(client.user)) {
         message.channel.sendTyping();
@@ -217,24 +217,24 @@ const processMessages = async () => {
         userMessageContent = originalMessage;
         let logData = `Sender: ${sender}\nOriginal Message: ${originalMessage}`;
 
-        
+
         const input = originalMessage;
         inputTokensUsed = input.split(' ').length; // Count input tokens
         const response = await sendChatMessage(input).catch(error => {
           console.log('Error sending message:', error);
           return null;
         });
-        
-        
+
+
         if (response) {
           botState = 'Processing Reply';
           updateConsole();
           //1984 module
           filteredResponse = response.replace(/<@!\d+>/g, '')//remove ping tags (<@bunchofnumbers>)
-          if (removeLinks == 1){
+          if (removeLinks == 1) {
             filteredResponse.replace(/(https?:\/\/[^\s]+)/gi, '~~link removed~~');//replace links with link removed
           }
-          if (removePings == 1){
+          if (removePings == 1) {
             filteredResponse.replace(/@/g, '@\u200B');//place invisible space between @ and words so bot can't ping
           }
           //slur filtering
