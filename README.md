@@ -42,7 +42,7 @@ Training will also take a while, especially if you've given it a lot of data. Fo
 
 
 
-## Step 4 - Releasing it into the wild (Discord)
+## Step 3 - Releasing it into the wild (Discord)
 
 ### Bucket will want to say slurs after a while. There's a filter in place which should block most if not all of them, and a well crafted system prompt will prevent some as well. We will need a better solution for "ignoring" them from OpenAI's data.
 
