@@ -230,7 +230,7 @@ const processMessages = async () => {
           });
 
           // regex to match emotes like :this:
-          const emojiRegex = /<:[a-zA-Z0-9_]+:/g;
+          const emojiRegex = /:[a-zA-Z0-9_]+:/g;
 
           // check to see if they're in the response so far
           const matchedEmojis = filteredResponse.match(emojiRegex);
@@ -239,7 +239,7 @@ const processMessages = async () => {
             //find each emote 
             matchedEmojis.forEach(match => {
               const emojiName = match.split(':')[1]; // remove the colons, discord.js doesn't want them
-              const emoji = client.emojis.find(emoji => emoji.name === emojiName); //then just search for the emote
+              const emoji = client.emojis.cache.find(emoji => emoji.name === emojiName); //then just search for the emote
               //this should reset each message, but we'll find out if it doesnt.
               if (emoji) {
                 // If the emoji is found, replace the matched string with the actual emoji

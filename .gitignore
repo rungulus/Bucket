@@ -9,4 +9,4 @@ internal.txt
 logs
 data
 saved_messages.jsonl
-bot/saved_messages.jsonl
+"saved_messages.jsonl"
