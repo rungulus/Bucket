@@ -42,7 +42,7 @@ Training will also take a while, especially if you've given it a lot of data. Fo
 
 
 
-## Step 4 - Releasing it into the wild (Discord)
+## Step 3 - Releasing it into the wild (Discord)
 
 ### Bucket will want to say slurs after a while. There's a filter in place which should block most if not all of them, and a well crafted system prompt will prevent some as well. We will need a better solution for "ignoring" them from OpenAI's data.
 
@@ -70,9 +70,10 @@ Training will also take a while, especially if you've given it a lot of data. Fo
     - default: 2.2
   <hr>
 - systemPrompt: your system prompt that the ai will use
-    > **A note on system prompts**
-    > <hr>
-    > While you're in `config.json`, you need to add a system prompt. This sets the guidelines and "boundaries" that the AI *mostly* follows. You can use the same system prompt that was used in `jsoncleaner.py`, but now would be the best time to mess around and see what gives you the best results. 
+
+  > **A note on system prompts**
+  >
+  > While you're in `config.json`, you need to add a system prompt. This sets the guidelines and "boundaries" that the AI *mostly* follows. You can use the same system prompt that was used in `jsoncleaner.py`, but now would be the best time to mess around and see what gives you the best results. 
 
 - removePings: can be 0 or 1, 1 to remove pings, 0 to allow them
 - removeLinks: can be 0 or 1, 1 to remove links, 0 to allow them
