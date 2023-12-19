@@ -1,8 +1,0 @@
-{
-  "type": "module",
-  "dependencies": {
-    "esm": "^3.2.25",
-    "node-fetch": "^3.3.2",
-    "openai": "^4.22.0"
-  }
-}
