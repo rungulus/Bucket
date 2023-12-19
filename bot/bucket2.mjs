@@ -65,7 +65,8 @@ let totalPings= 0;
 let blockedWordsCount = 0;
 let latestError = `none!`;
 let filteredResponse; //out here so we can save it
-let originalMessage;
+let userMessageContent = '';
+let originalMessage = '';
 // update the console
 function updateConsole() {
   console.clear(); // Clear console before updating counters
@@ -193,7 +194,7 @@ const processMessages = async () => {
         botState = 'Logging for Training';
         updateConsole();
         // const systemPrompt = config.systemPrompt;
-        const userPrompt = originalMessage;
+        const userPrompt = userMessageContent;
         const aiResponse = filteredResponse; // Assuming the AI response is the same as the bot's message content
         await saveToJSONL(systemPrompt, userPrompt, aiResponse);
       }
@@ -213,7 +214,7 @@ const processMessages = async () => {
         updateConsole();
         const sender = message.author.tag;
         originalMessage = message.content.replace(/<@!\d+>/g, '').replace('<@1183327864624517120>', '').trim(); //dont send the ping to the ai
-
+        userMessageContent = originalMessage;
         let logData = `Sender: ${sender}\nOriginal Message: ${originalMessage}`;
 
         
