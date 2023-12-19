@@ -1,7 +1,7 @@
 import fs from "fs";
 import OpenAI from "openai";
 import Discord from "discord.js";
-const { Client, GatewayIntentBits } = Discord; //workaround because discord.js doesn't like being imported
+const { Client, GatewayIntentBits, Events, Partials } = Discord; //workaround because discord.js doesn't like being imported
 
 const config = await fs.readFileSync('config.json', 'utf8');
 const { discordToken, openaiapi, severityCategory, maxTokens, systemPrompt, allowedChannelId } = JSON.parse(config); //get all the settings
@@ -55,7 +55,8 @@ let logToFile = async (logData) => {
 let botState = 'Idle';
 let botTag = '[connecting to discord]'; 
 // Variables to keep track of the console output
-let inputTokensUsed, outputTokensUsed,totalTokensUsed,totalInputTokensUsed,totalOutputTokensUsed,trainingDataFromMessage,totalPings,blockedWordsCount = 0;
+let inputTokensUsed, outputTokensUsed,totalTokensUsed,totalInputTokensUsed,totalOutputTokensUsed = 0;
+let trainingDataFromMessage,totalPings,blockedWordsCount = 0;
 let latestError = `none!`;
 // update the console
 function updateConsole() {
@@ -153,7 +154,13 @@ const processMessages = async () => {
     const client = new Client({
       intents: [
         GatewayIntentBits.Guilds,
-        GatewayIntentBits.GuildMessages
+        GatewayIntentBits.GuildMessages,
+        GatewayIntentBits.GuildMessageReactions
+      ],
+      partials: [
+        Partials.Message,
+        Partials.Channel,
+        Partials.Reaction
       ]
     });
 
@@ -222,7 +229,7 @@ const processMessages = async () => {
             //find each emote 
             matchedEmojis.forEach(match => {
               const emojiName = match.split(':')[1]; // remove the colons, discord.js doesn't want them
-              const emoji = client.emojis.cache.find(emoji => emoji.name === emojiName); //then just search for the emote
+              const emoji = client.emojis.find(emoji => emoji.name === emojiName); //then just search for the emote
               //this should reset each message, but we'll find out if it doesnt.
               if (emoji) {
                 // If the emoji is found, replace the matched string with the actual emoji
@@ -236,7 +243,7 @@ const processMessages = async () => {
 
           //this doesn't work!
           //we may need to check for this differently.
-          client.on('messageReactionAdd', async (reaction, user) => {
+          client.on(Events.MessageReactionAdd, async (reaction, user) => {
             if (
               reaction.count >= reactionLimit &&
               reaction.emoji.name === '🔥' &&
