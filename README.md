@@ -69,25 +69,22 @@ Training will also take a while, especially if you've given it a lot of data. Fo
   - severityCategory: what "level" of slurs and bad words should we filter, can be 0-3.
     - default: 2.2
   <hr>
-- systemPrompt: your system prompt that the ai will use
+  
+  - systemPrompt: your system prompt that the ai will use
 
-  > **A note on system prompts**
-  >
-  > While you're in `config.json`, you need to add a system prompt. This sets the guidelines and "boundaries" that the AI *mostly* follows. You can use the same system prompt that was used in `jsoncleaner.py`, but now would be the best time to mess around and see what gives you the best results. 
+> **A note on system prompts**
+>
+> While you're in `config.json`, you need to add a system prompt. This sets the guidelines and "boundaries" that the AI *mostly* follows. You can use the same system prompt that was used in `jsoncleaner.py`, but now would be the best time to mess around and see what gives you the best results. 
 
 - removePings: can be 0 or 1, 1 to remove pings, 0 to allow them
 - removeLinks: can be 0 or 1, 1 to remove links, 0 to allow them
 <hr>
-2. Open a terminal/command prompt in the `/bot/` folder and run `node bucket2.mjs`
 
-If you're having issues with the bot, make sure the dependencies are installed by running
-
-> `npm install discord.js node-fetch openai`
+2. Open a terminal/command prompt in the `bot` folder, then run `npm install` to grab all the dependencies
+  
+3. Once that's done, run `node bucket2.mjs` or just `node .` to start the bot
 
 Bucket will log responses, and who triggered the bot in the `/bot/logs/` folder. 
-
-## Future Plans
-- Working "train from bot response" system
 
 ## Contributing
 Feel Free! If you want to change something just open a PR.
