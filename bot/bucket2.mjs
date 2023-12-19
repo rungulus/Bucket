@@ -272,7 +272,7 @@ const processMessages = async () => {
           logData += `\nFiltered: ${filteredResponse}`;
           logData += '\n------------------------------------';
 
-          const delay = Math.random() * 1500; // Random delay in milliseconds (0 to 1500 ms)
+          const delay = Math.random() * 750; // Random delay in milliseconds (0 to 1500 ms)
           await new Promise((resolve) => setTimeout(resolve, delay));
           try {
             botState = 'Sending Message';
