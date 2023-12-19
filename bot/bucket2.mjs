@@ -262,9 +262,7 @@ const processMessages = async () => {
               // we do not care if the emote is not found (its funnier), so we don't handle this case.
             });
           }
-          
-
-
+          // time to log some data
           logData += `\nInput Tokens Used: ${inputTokensUsed}`; // Append input tokens used to log data
           logData += `\nOutput Tokens Used: ${outputTokensUsed}`; // Append output tokens used to log data
           logData += `\nTotal Tokens Used: ${totalTokensUsed} - Total Input:${totalInputTokensUsed} - Total Output:${totalOutputTokensUsed}`; // Append total tokens used to log data
@@ -274,6 +272,8 @@ const processMessages = async () => {
           logData += `\nFiltered: ${filteredResponse}`;
           logData += '\n------------------------------------';
 
+          const delay = Math.random() * 1500; // Random delay in milliseconds (0 to 1500 ms)
+          await new Promise((resolve) => setTimeout(resolve, delay));
           try {
             botState = 'Sending Message';
             updateConsole();
