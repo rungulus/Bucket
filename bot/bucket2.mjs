@@ -56,7 +56,9 @@ let botState = 'Idle';
 let botTag = '[connecting to discord]'; 
 // Variables to keep track of the console output
 let inputTokensUsed, outputTokensUsed,totalTokensUsed,totalInputTokensUsed,totalOutputTokensUsed = 0;
-let trainingDataFromMessage,totalPings,blockedWordsCount = 0;
+let trainingDataFromMessage = 0;
+let totalPings= 0;
+let blockedWordsCount = 0;
 let latestError = `none!`;
 // update the console
 function updateConsole() {
@@ -132,8 +134,14 @@ const processMessages = async () => {
             { role: "system", content: `${systemPrompt}` },
             { role: "user", content: `${message}`}
           ],
-          model: `${modelId}`
+          model: `${modelId}`,
+          frequency_penalty: 1,
+          presence_penalty: 0.6,
+          temperature: 0.5,
+          max_tokens: 50
         });
+
+
         
         if (completions.choices && completions.choices.length > 0) {
           const responseContent = completions.choices[0].message.content;
@@ -168,6 +176,8 @@ const processMessages = async () => {
       botTag = client.user.tag;
       updateConsole();
     });
+
+
 
     client.on('messageCreate', async (message) => {
       if (message.channelId !== allowedChannelId){
@@ -239,10 +249,7 @@ const processMessages = async () => {
 
             });
           }
-    
-
-          //this doesn't work!
-          //we may need to check for this differently.
+          
           client.on(Events.MessageReactionAdd, async (reaction, user) => {
             if (
               reaction.count >= reactionLimit &&
@@ -259,8 +266,6 @@ const processMessages = async () => {
               await saveToJSONL(systemPrompt, userPrompt, aiResponse);
             }
           });
-
-
           // // Calculate total tokens used
           // totalTokensUsed += inputTokensUsed + outputTokensUsed;
           // totalInputTokensUsed += inputTokensUsed;
