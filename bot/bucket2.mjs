@@ -137,7 +137,7 @@ const processMessages = async () => {
           model: `${modelId}`,
           frequency_penalty: 1,
           presence_penalty: 0.6,
-          temperature: 0.5,
+          temperature: 0.6,
           max_tokens: 50
         });
 
@@ -215,9 +215,9 @@ const processMessages = async () => {
           botState = 'Processing Reply';
           updateConsole();
           let filteredResponse = response
-            .replace(/<@!\d+>/g, '') //remove ping tags
-            .replace(/@/g, '@\u200B') // invisible space so bot cannot ping normally
-            .replace(/(https?:\/\/[^\s]+)/gi, '~~link removed~~'); // remove links
+             .replace(/<@!\d+>/g, '') //remove ping tags
+             .replace(/@/g, '@\u200B') // invisible space so bot cannot ping normally
+            // .replace(/(https?:\/\/[^\s]+)/gi, '~~link removed~~'); // remove links
 
 
           //make sure we do censoring before we do emoji matching
