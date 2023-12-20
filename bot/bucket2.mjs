@@ -185,7 +185,7 @@ const processMessages = async () => {
 
     client.on(Events.MessageReactionAdd, async (reaction, user) => {
       if (
-        reaction.count >= reactionCount &&
+        reaction.count == reactionCount &&
         reaction.emoji.name === trainEmoji &&
         user.id !== client.user.id &&
         reaction.message.author.id === client.user.id // Ensure reaction is on bot's message
@@ -272,8 +272,8 @@ const processMessages = async () => {
           logData += `\nFiltered: ${filteredResponse}`;
           logData += '\n------------------------------------';
 
-          const delay = Math.random() * 750; // Random delay in milliseconds (0 to 750 ms)
-          await new Promise((resolve) => setTimeout(resolve, delay));
+          // const delay = Math.random() * 750; // Random delay in milliseconds (0 to 750 ms)
+          // await new Promise((resolve) => setTimeout(resolve, delay));
           try {
             botState = 'Sending Message';
             updateConsole();
