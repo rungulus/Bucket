@@ -195,7 +195,7 @@ const processMessages = async () => {
         updateConsole();
         // const systemPrompt = config.systemPrompt;
         const userPrompt = userMessageContent;
-        const aiResponse = filteredResponse; // Assuming the AI response is the same as the bot's message content
+        const aiResponse = reaction.message.content; // Assuming the AI response is the same as the bot's message content
         await saveToJSONL(systemPrompt, userPrompt, aiResponse);
       }
     });
