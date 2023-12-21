@@ -213,7 +213,7 @@ const processMessages = async () => {
         botState = `Activated by ${message.author.tag}`;
         updateConsole();
         const sender = message.author.tag;
-        originalMessage = message.content.replace(/<@!\d+>/g, '').replace('<@1183327864624517120>', '').trim(); //dont send the ping to the ai
+        originalMessage = message.content.replace(/<@!\d+>/g, '').replace(`<@${client.user.id}>`, '').trim(); //dont send the ping to the ai
         userMessageContent = originalMessage;
         let logData = `Sender: ${sender}\nOriginal Message: ${originalMessage}`;
 
