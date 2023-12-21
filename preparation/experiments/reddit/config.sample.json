@@ -1,0 +1,9 @@
+{
+    "system_prompt": "Your system prompt goes here.",
+    "reddit_credentials": {
+      "client_id": "YOUR_CLIENT_ID",
+      "client_secret": "YOUR_CLIENT_SECRET",
+      "user_agent": "YOUR_USER_AGENT"
+    }
+  }
+  
