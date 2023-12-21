@@ -1,4 +1,4 @@
-<img src='bucket.jpg' width='100' align="right">
+<img src='bucket.png' width='100' align="right">
 
 # Bucket
 
