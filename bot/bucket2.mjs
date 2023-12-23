@@ -97,7 +97,6 @@ const saveToJSONL = async(systemPrompt, userPrompt, aiResponse) => {
             //try to save in chat completion format
         ]
     };
-
     try {
         const jsonlData = JSON.stringify(data) + '\n';
         await fs.appendFileSync('saved-messages.jsonl', jsonlData);
