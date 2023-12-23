@@ -194,8 +194,8 @@ const processMessages = async() => {
                 botState = 'Logging for Training';
                 updateConsole();
                 // const systemPrompt = config.systemPrompt;
-                // const userPrompt = userMessageContent;
-                const userPrompt = reaction.message.fetch(message.reference.messageID); //should return the original message?
+                const userPrompt = userMessageContent;
+                //const userPrompt = reaction.message.fetch(message.reference.messageID); //should return the original message?
                 //according to stackoverflow, this can cause bugs, so we should wrap this in a try/catch or something similar
                 //i will find a better solution when i get home 
                 const aiResponse = reaction.message.content;
@@ -225,7 +225,6 @@ const processMessages = async() => {
                     console.log('Error sending message:', error);
                     return null;
                 });
-
 
                 if (response) {
                     botState = 'Processing Reply';
