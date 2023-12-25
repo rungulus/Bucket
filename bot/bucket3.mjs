@@ -236,7 +236,7 @@ const processMessages = async() => {
                 botState = `Activated by ${message.author.tag}`;
                 updateConsole();
 
-                originalMessage = message.content.replace(/<@!?\d+>/g, '').trim(); // Remove bot mention
+                originalMessage = message.content.replace(`<@${client.user.id}>`, 'Bucket,').trim(); // Remove bot mention
                 userMessageContent = originalMessage;
 
                 let logData = `Sender: ${message.author.tag}\nOriginal Message: ${originalMessage}`;
