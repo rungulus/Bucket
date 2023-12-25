@@ -283,8 +283,8 @@ const processMessages = async() => {
                             // we do not care if the emote is not found (its funnier), so we don't handle this case.
                         });
                     }
-                    const openAiSessionId = response.data.session;
-                    if (openAiSessionId) {
+                    if (response && response.data && response.data.session) {
+                        const openAiSessionId = response.data.session;
                         messageThreadMap.set(message.id, openAiSessionId);
                     }
                     // time to log some data
