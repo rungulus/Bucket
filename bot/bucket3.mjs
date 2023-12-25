@@ -70,7 +70,7 @@ let userMessageContent = '';
 let originalMessage = '';
 // update the console
 function updateConsole() {
-    console.clear(); // Clear console before updating counters
+    //console.clear(); // Clear console before updating counters
     //welcome to console.log hell
     //im sure there's a better way to do this
     console.log('Connected as', botTag);
@@ -137,8 +137,10 @@ const processMessages = async() => {
                 updateConsole();
 
                 // use assistant api instead of completions api
-                const assistant = new openai.Assistant(`${modelId}`, {
-                    apiKey: `${apiKey}`
+                const assistant = await openai.beta.assistants.create({
+                    name: "Bucket",
+                    instructions: `${systemPrompt}`,
+                    model: `${modelId}`
                 });
 
                 // do the normal stuff so far
