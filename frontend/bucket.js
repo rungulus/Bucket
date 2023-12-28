@@ -116,6 +116,36 @@ class Bucket extends EventEmitter {
         }
     }
 
+    async logToFile(logData){
+        const currentDate = new Date().toISOString().slice(0, 10); // Get current date for log file name
+    
+        try {
+            await fs.promises.mkdir(logDirectory, { recursive: true }); // Use fs.promises for asynchronous operations
+            const logFileName = `${logDirectory}/bot_logs_${currentDate}.txt`;
+    
+            let fileStats;
+            try {
+                fileStats = await fs.promises.stat(logFileName);
+            } catch (err) {
+                botState = 'Creating Log File';
+            }
+    
+            const logContent = `${logData}\n`;
+    
+            if (!fileStats || fileStats.size >= maxLogFileSize) {
+                // Create a new log file if the current one is too large or doesn't exist
+                await fs.promises.writeFile(logFileName, logContent);
+            } else {
+                // Append to the current log file
+                await fs.promises.appendFile(logFileName, logContent);
+            }
+    
+            botState = 'Writing to log file';
+        } catch (error) {
+            console.log('Error writing to log file:', error);
+        }
+    };
+
     emitUpdate() {
         console.log('Updating UI');
         this.emit('update', {
@@ -146,7 +176,7 @@ class Bucket extends EventEmitter {
             await fs.appendFileSync('saved-messages.jsonl', jsonlData);
             botState = 'Idle';
         } catch (error) {
-            latestError = 'Error saving data to JSONL file:', error;
+            this.latestError = 'Error saving data to JSONL file:', error;
         }
     };
     
@@ -175,34 +205,35 @@ class Bucket extends EventEmitter {
     
             const sendChatMessage = async(message) => {
                 try {
-                    botState = 'Waiting for AI';
+                    this.botState = 'Waiting for AI';
                     
-                    const completions = await openai.chat.completions.create({
+                    const completions = await this.openai.chat.completions.create({
                         messages: [
-                            { role: "system", content: `${systemPrompt}` },
+                            { role: "system", content: `${this.systemPrompt}` },
                             { role: "user", content: `${message}` }
                         ],
-                        model: `${modelId}`,
-                        frequency_penalty: frequencyPenalty,
-                        presence_penalty: presencePenalty,
-                        temperature: temperature,
-                        max_tokens: maxTokens
+                        model: `${this.modelId}`,
+                        frequency_penalty: this.frequencyPenalty,
+                        presence_penalty: this.presencePenalty,
+                        temperature: this.temperature,
+                        max_tokens: this.maxTokens
                     });
     
                     if (completions.choices && completions.choices.length > 0) {
                         const responseContent = completions.choices[0].message.content;
                         console.log('Response Content:', responseContent);
-                        outputTokensUsed = parseInt(completions.usage.completion_tokens);
-                        totalOutputTokensUsed += outputTokensUsed;
-                        inputTokensUsed = parseInt(completions.usage.prompt_tokens);
-                        totalInputTokensUsed += inputTokensUsed;
-                        totalTokensUsed += parseInt(completions.usage.total_tokens);
+                        this.outputTokensUsed = parseInt(completions.usage.completion_tokens);
+                        this.totalOutputTokensUsed += this.outputTokensUsed;
+                        this.inputTokensUsed = parseInt(completions.usage.prompt_tokens);
+                        this.totalInputTokensUsed += this.inputTokensUsed;
+                        this.totalTokensUsed += parseInt(completions.usage.total_tokens);
                         return responseContent;
                     } else {
                         console.log('No valid response received from the bot.');
                         return '[OpenAI Error - No valid response]';
                     }
                 } catch (error) {
+                    console.error('OpenAI APi Error:', error);
                     return "[Generic Error - probably OpenAI]";
                 }
             };
@@ -215,16 +246,16 @@ class Bucket extends EventEmitter {
     
             this.client.on(Events.MessageReactionAdd, async(reaction, user) => {
                 if (
-                    reaction.count == reactionCount &&
-                    reaction.emoji.name === trainEmoji &&
+                    reaction.count == this.reactionCount &&
+                    reaction.emoji.name === this.trainEmoji &&
                     user.id !== this.client.user.id &&
                     reaction.message.author.id === this.client.user.id // Ensure reaction is on bot's message
                 ) {
-                    trainingDataFromMessage++;
-                    botState = 'Logging for Training';
+                    this.trainingDataFromMessage++;
+                    this.botState = 'Logging for Training';
                     
                     // const systemPrompt = config.systemPrompt;
-                    const userPrompt = userMessageContent;
+                    const userPrompt = this.userMessageContent;
                     //const userPrompt = reaction.message.fetch(message.reference.messageID); //should return the original message?
                     //according to stackoverflow, this can cause bugs, so we should wrap this in a try/catch or something similar
                     //i will find a better solution when i get home 
@@ -234,51 +265,51 @@ class Bucket extends EventEmitter {
             });
     
             this.client.on('messageCreate', async(message) => {
-                if (message.channelId !== allowedChannelId) {
+                if (message.channelId !== this.allowedChannelId) {
                     return; //we don't care if it's not in the channel
                 }
     
                 if (message.mentions.has(this.client.user)) {
                     message.channel.sendTyping();
-                    totalPings++;
-                    botState = `Activated by ${message.author.tag}`;
+                    this.totalPings++;
+                    this.botState = `Activated by ${message.author.tag}`;
                     
                     const sender = message.author.tag;
-                    originalMessage = message.content.replace(/<@!\d+>/g, '').replace(`<@${this.client.user.id}>`, '').trim(); //dont send the ping to the ai
-                    userMessageContent = originalMessage;
-                    let logData = `Sender: ${sender}\nOriginal Message: ${originalMessage}`;
+                    this.originalMessage = message.content.replace(/<@!\d+>/g, '').replace(`<@${this.client.user.id}>`, '').trim(); //dont send the ping to the ai
+                    this.userMessageContent = this.originalMessage;
+                    let logData = `Sender: ${sender}\nOriginal Message: ${this.originalMessage}`;
     
     
-                    const input = originalMessage;
-                    inputTokensUsed = input.split(' ').length; // Count input tokens
+                    const input = this.originalMessage;
+                    this.inputTokensUsed = input.split(' ').length; // Count input tokens
                     const response = await sendChatMessage(input).catch(error => {
                         console.log('Error sending message:', error);
                         return null;
                     });
     
                     if (response) {
-                        botState = 'Processing Reply';
+                        this.botState = 'Processing Reply';
                         
                         //1984 module
-                        filteredResponse = response.replace(/<@!\d+>/g, '') //remove ping tags (<@bunchofnumbers>)
-                        if (removeLinks == 1) {
-                            filteredResponse.replace(/(https?:\/\/[^\s]+)/gi, '~~link removed~~'); //replace links with link removed
+                        this.filteredResponse = response.replace(/<@!\d+>/g, '') //remove ping tags (<@bunchofnumbers>)
+                        if (this.removeLinks == 1) {
+                            this.filteredResponse.replace(/(https?:\/\/[^\s]+)/gi, '~~link removed~~'); //replace links with link removed
                         }
-                        if (removePings == 1) {
-                            filteredResponse.replace(/@/g, '@\u200B'); //place invisible space between @ and words so bot can't ping
+                        if (this.removePings == 1) {
+                            this.filteredResponse.replace(/@/g, '@\u200B'); //place invisible space between @ and words so bot can't ping
                         }
                         //slur filtering
                         blockedWords.forEach(word => {
                             const regex = new RegExp(`\\b${word.word}\\b|${word.word}(?=[\\W]|$)`, 'gi');
-                            if (filteredResponse.match(regex)) {
-                                blockedWordsCount++; // Increment blocked words counter for each match found
+                            if (this.filteredResponse.match(regex)) {
+                                this.blockedWordsCount++; // Increment blocked words counter for each match found
                             }
-                            filteredResponse = filteredResponse.replace(regex, 'nt'); //temporary, seems we have something tripping up the filter, especially on words ending in "nt", like "want"
+                            this.filteredResponse = this.filteredResponse.replace(regex, 'nt'); //temporary, seems we have something tripping up the filter, especially on words ending in "nt", like "want"
                         });
     
                         //ok time to find some emojis
                         const emojiRegex = /:[a-zA-Z0-9_]+:/g;
-                        const matchedEmojis = filteredResponse.match(emojiRegex);
+                        const matchedEmojis = this.filteredResponse.match(emojiRegex);
                         //if we found some, we need to do some work to let the bot send them
                         if (matchedEmojis) {
                             matchedEmojis.forEach(match => {
@@ -287,29 +318,22 @@ class Bucket extends EventEmitter {
                                 //this should reset each message, but we'll find out if it doesnt.
                                 if (emoji) {
                                     // If the emoji is found, replace the matched string with the actual emoji
-                                    filteredResponse = filteredResponse.replace(match, emoji.toString());
+                                    this.filteredResponse = this.filteredResponse.replace(match, emoji.toString());
                                 }
                                 // we do not care if the emote is not found (its funnier), so we don't handle this case.
                             });
                         }
-                        // time to log some data
-                        logData += `\nInput Tokens Used: ${inputTokensUsed}`; // Append input tokens used to log data
-                        logData += `\nOutput Tokens Used: ${outputTokensUsed}`; // Append output tokens used to log data
-                        logData += `\nTotal Tokens Used: ${totalTokensUsed} - Total Input:${totalInputTokensUsed} - Total Output:${totalOutputTokensUsed}`; // Append total tokens used to log data
-                        logData += '\n--';
-                        logData += `\nPre-Filter: ${response}`;
-                        logData += '\n--';
-                        logData += `\nFiltered: ${filteredResponse}`;
-                        logData += '\n------------------------------------';
+
+                        //log here
     
                         try {
-                            botState = 'Sending Message';
+                            this.botState = 'Sending Message';
                             
                             await message.reply({
-                                content: filteredResponse,
+                                content: this.filteredResponse,
                                 allowedMentions: { repliedUser: false }
                             });
-                            botState = 'Sent Message';
+                            this.botState = 'Sent Message';
                             
                         } catch (error) {
                             console.log('Error replying to user in channel:', error);
@@ -317,10 +341,10 @@ class Bucket extends EventEmitter {
                     } else {
                         console.log('No response from the bot.');
                     }
-                    botState = 'Logging Data';
+                    this.botState = 'Logging Data';
                     
-                    await logToFile(logData); // Write log data to file
-                    botState = 'Idle';
+                    await this.logToFile(logData); // Write log data to file
+                    this.botState = 'Idle';
                     
     
     
