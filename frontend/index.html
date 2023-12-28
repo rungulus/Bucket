@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Discord Bot Dashboard</title>
+    <style>
+        body { font-family: Arial, sans-serif; }
+        .counter { margin-bottom: 20px; }
+    </style>
+</head>
+<body>
+    <h1>Discord Bot Dashboard</h1>
+    <div id="botInfo">
+        <div class="counter">Total Pings: <span id="totalPings">0</span></div>
+        <div class="counter">Blocked Words: <span id="blockedWordsCount">0</span></div>
+        <!-- Add more counters as needed -->
+    </div>
+
+    <script>
+        const { ipcRenderer } = require('electron');
+
+        ipcRenderer.on('bot-update', (event, data) => {
+            document.getElementById('totalPings').textContent = data.totalPings;
+            document.getElementById('blockedWordsCount').textContent = data.blockedWordsCount;
+            // Update other counters similarly
+        });
+    </script>
+</body>
+</html>

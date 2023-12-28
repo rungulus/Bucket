@@ -1,0 +1,28 @@
+{
+  "dependencies": {
+    "discord.js": "^14.14.1",
+    "electron": "^28.1.0",
+    "node-fetch": "^3.3.2",
+    "openai": "^4.21.0"
+  },
+  "name": "bucket",
+  "version": "2.0.2",
+  "description": "Bucket is an AI Language Model that is trained on a Discord server.",
+  "main": "bucket2.mjs",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/runguszone/Bucket.git"
+  },
+  "scripts": {
+    "start": "electron ."
+  },
+  "keywords": [
+    "bucket"
+  ],
+  "author": "rungus",
+  "license": "Apache-2.0",
+  "bugs": {
+    "url": "https://github.com/runguszone/Bucket/issues"
+  },
+  "homepage": "https://github.com/runguszone/Bucket#readme"
+}
