@@ -1,11 +1,17 @@
 const { app, BrowserWindow } = require('electron');
-const path = require('path');
-const Bucket = require('./bucket2.mjs').default;
+const Bucket = require('./bucket.js');
+console.log('Hello, Electron!');
+const Bot = new Bucket();
+Bot.initialize().then(() => {
+    console.log('Hi Bucket!');
+}).catch(error => {
+    console.error('Error initializing bot:', error);
+});
 
 let mainWindow;
-let Bucket = new Bucket();
 
 function createWindow() {
+    console.log('trying window');
     mainWindow = new BrowserWindow({
         width: 800,
         height: 600,
@@ -16,22 +22,13 @@ function createWindow() {
     });
 
     mainWindow.loadFile('index.html');
-
-    Bucket.on('update', (data) => {
-        mainWindow.webContents.send('bot-update', data);
-    });
-
-    Bucket.start(); // Or whatever method starts your bot
 }
 
 app.whenReady().then(createWindow);
 
-// Other app event handlers...
-
-
 app.on('window-all-closed', () => {
     if (process.platform !== 'darwin') {
-        botProcess.kill(); // Kill the bot process when the app is closed
+        if (Bot) Bot.stop();
         app.quit();
     }
 });

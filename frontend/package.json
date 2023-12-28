@@ -2,13 +2,14 @@
   "dependencies": {
     "discord.js": "^14.14.1",
     "electron": "^28.1.0",
+    "inquirer": "^9.2.12",
     "node-fetch": "^3.3.2",
     "openai": "^4.21.0"
   },
   "name": "bucket",
   "version": "2.0.2",
   "description": "Bucket is an AI Language Model that is trained on a Discord server.",
-  "main": "bucket2.mjs",
+  "main": "index.js",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/runguszone/Bucket.git"

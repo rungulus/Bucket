@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Discord Bot Dashboard</title>
+    <title>Bucket</title>
     <style>
         body { font-family: Arial, sans-serif; }
         .counter { margin-bottom: 20px; }
@@ -12,7 +12,12 @@
     <div id="botInfo">
         <div class="counter">Total Pings: <span id="totalPings">0</span></div>
         <div class="counter">Blocked Words: <span id="blockedWordsCount">0</span></div>
-        <!-- Add more counters as needed -->
+        <div class="counter">Messages Saved: <span id="trainingDataFromMessage">0</span></div>
+        <div class="counter">Total Tokens Used: <span id="totalTokensUsed ">0</span></div>
+        <div class="counter">Input Tokens Used: <span id="inputTokensUsed">0</span></div>
+        <div class="counter">Output Tokens Used: <span id="outputTokensUsed">0</span></div>
+        <div class="counter">Total Input: <span id="totalInputTokensUsed">0</span></div>
+        <div class="counter">Total Output: <span id="totalOutputTokensUsed">0</span></div>
     </div>
 
     <script>
@@ -21,7 +26,7 @@
         ipcRenderer.on('bot-update', (event, data) => {
             document.getElementById('totalPings').textContent = data.totalPings;
             document.getElementById('blockedWordsCount').textContent = data.blockedWordsCount;
-            // Update other counters similarly
+            document.getElementById
         });
     </script>
 </body>
