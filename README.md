@@ -86,5 +86,13 @@ Training will also take a while, especially if you've given it a lot of data. Fo
 
 Bucket will log responses, and who triggered the bot in the `/bot/logs/` folder. 
 
+## Frontend
+I'm working on a better frontend for Bucket. If you'd like to test it, go ahead and 
+- open cmd/terminal in the `frontend` folder
+- run `npm install`
+- once that's done, run `npm start`
+
+Bucket's frontend is experimental, and not finished. Please let me know if there's something I should add to it.
+
 ## Contributing
 Feel Free! If you want to change something just open a PR.
