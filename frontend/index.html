@@ -1,32 +1,46 @@
-<!DOCTYPE html>
-<html>
-    <head>
-        <title>Bucket</title>
-        <style>
-            body { font-family: Arial, sans-serif; }
-            .counter { margin-bottom: 20px; }
-            .message {
-                margin-bottom: 10px;
-                padding: 5px;
-                border: 1px solid #ddd;
-            }
-        </style>
+<!doctype html>
+<html lang="en" data-bs-theme="dark" class="spaceBG">
+  <head>
+        <!-- these meta tags cannot be nested in a module, so they're out here -->
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <title>Bucket v2.5</title>
+        
+        <link rel="stylesheet" href="css/bootstrap.min.css">
+        <link rel="stylesheet" href="css/custom.css">
+        <link rel="preload" href="css/backdroponly.css" as="style" onload="this.onload=null;this.rel='stylesheet'">
     </head>
     <body>
-        <h1>Bucket</h1>
-        <div id="botInfo">
-            <div class="counter">Total Pings: <span id="totalPings">0</span></div>
-            <div class="counter">Blocked Words: <span id="blockedWordsCount">0</span></div>
-            <div class="counter">Messages Saved: <span id="trainingDataFromMessage">0</span></div>
-            <div class="counter">Total Tokens Used: <span id="totalTokensUsed ">0</span></div>
-            <div class="counter">Input Tokens Used: <span id="inputTokensUsed">0</span></div>
-            <div class="counter">Output Tokens Used: <span id="outputTokensUsed">0</span></div>
-            <div class="counter">Total Input: <span id="totalInputTokensUsed">0</span></div>
-            <div class="counter">Total Output: <span id="totalOutputTokensUsed">0</span></div>
-            <div class="counter">Total Output: <span id="response">0</span></div>
-            <div class="counter">Total Output: <span id="filteredResponse">0</span></div>
-        </div>
-        <div id="messagesContainer"></div>
+        <div class="container-fluid z-n1 position-absolute">
+            <div class="container">
+              <pagelogo>
+                  <div class="container">
+                    <div class="">
+                        <p class="text-center mb-n"><span class="runguszone siteText">Bucket</p>
+                        <p class="text-center fs-5"><span class="badge bg-primary-subtle">version 2.5</span></p>
+                    </div>
+                </div>
+              </pagelogo>
+              <helloarea>
+                <div class="container alert frostedglass">
+                    <div id="botInfo">
+                        <p class="runguszone text-center fs-3 lead">
+                            Total Pings: <span class="badge bg-info-subtle"><span id="totalPings">0</span></span> 
+                            <br>Blocked Words: <span id="blockedWordsCount"><span class="badge bg-success">0</span></span>
+                            <br>Messages Saved: <span class="badge bg-success"><span id="trainingDataFromMessage">0</span></span></p>
+                        <hr>
+                        <p class="text-center fs-4 lead">
+                            Connected As: <span class="badge bg-secondary-subtle"><span id="botTag"><span class="spinner-border spinner-border-sm" role="status"></span></span></span>
+                            <br>
+                            Bot State: <span class="badge bg-primary"><span id="botState"><span class="spinner-border spinner-border-sm" role="status"></span></span></span>
+                        </p>
+                    </div>
+                </div>
+              </helloarea>
+                <div class="container alert frostedglass">
+                    <p class="lead text-center runguszone fs-3">Recent Messages:</p>
+                    <div id="messagesContainer"></div>
+                </div>
+                
 
 
         <script>
@@ -34,15 +48,12 @@
 
             ipcRenderer.on('bot-update', (event, data) => {
                 document.getElementById('totalPings').textContent = data.totalPings;
-                document.getElementById('blockedWordsCount').textContent = data.blockedWordsCount;
+                if (data.blockedWordsCount > 0) {
+                    document.getElementById('blockedWordsCount').innerHTML = `<span class="badge bg-danger">${data.blockedWordsCount}</span>`;
+                }
                 document.getElementById('trainingDataFromMessage').textContent = data.trainingDataFromMessage;
-                document.getElementById('totalTokensUsed').textContent = data.totalTokensUsed;
-                document.getElementById('inputTokensUsed').textContent = data.inputTokensUsed;
-                document.getElementById('outputTokensUsed').textContent = data.outputTokensUsed;
-                document.getElementById('totalInputTokensUsed').textContent = data.totalInputTokensUsed;
-                document.getElementById('totalOutputTokensUsed').textContent = data.totalOutputTokensUsed;
-                document.getElementById('response').textContent = data.response;
-                document.getElementById('filteredResponse').textContent = data.filteredResponse;
+                document.getElementById('botTag').innerHTML = data.botTag;
+                document.getElementById('botState').innerHTML = data.botState;
             });
 
             ipcRenderer.on('recent-messages-update', (event, messages) => {
@@ -50,12 +61,22 @@
                 messagesContainer.innerHTML = ''; // Clear existing messages
                 messages.forEach(message => {
                     const messageDiv = document.createElement('div');
-                    messageDiv.className = 'message'; // Apply CSS class for styling
+                    messageDiv.className = 'container alert frostedglass'; // Apply CSS class for styling
+
+                    // const tokenInfoDiv = document.createElement('div');
+                    // tokenInfoDiv.className = 'token-info'; // CSS class for styling
+                    // tokenInfoDiv.innerHTML = `
+                    //     <p>Input Tokens: ${message.inputTokensUsed}</p>
+                    //     <p>Output Tokens: ${message.outputTokensUsed}</p>
+                    //     <p>Total Tokens: ${message.totalTokensUsed}</p>
+                    // `;
+
+                    // Constructing the message content
                     messageDiv.innerHTML = `
-                        <p>Sender: ${message.sender}</p>
-                        <p>Original Message: ${message.originalMessage}</p>
-                        <p>Pre-filtered Message: ${message.preFilteredMessage}</p>
-                        <p>Filtered Message: ${message.filteredMessage}</p>
+                        <p>${message.sender}: ${message.originalMessage}</p>
+                        <p>Pre-Filter: ${message.preFilteredMessage}</p>
+                        <p>Filtered: ${message.filteredMessage}</p>
+                        <span class="badge bg-dark-subtle">Tokens: I-${message.inputTokensUsed} O-${message.outputTokensUsed} T-${message.totalTokensUsed}</span>
                     `;
                     messagesContainer.appendChild(messageDiv);
                 });
