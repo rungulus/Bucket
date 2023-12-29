@@ -209,7 +209,7 @@ const processMessages = async() => {
             }
 
             if (message.mentions.has(client.user)) {
-                message.channel.sendTyping();
+                await message.channel.sendTyping();
                 totalPings++;
                 botState = `Activated by ${message.author.tag}`;
                 updateConsole();

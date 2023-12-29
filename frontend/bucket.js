@@ -281,14 +281,15 @@ class Bucket extends EventEmitter {
                 ) {
                     this.trainingDataFromMessage++;
                     this.botState = 'Logging for Training';
-                    
+                    const configData = await getConfig();
+                    const trainingPrompt = configData.config.openaiapi.systemPrompt;
                     // const systemPrompt = config.systemPrompt;
                     const userPrompt = this.userMessageContent;
                     //const userPrompt = reaction.message.fetch(message.reference.messageID); //should return the original message?
                     //according to stackoverflow, this can cause bugs, so we should wrap this in a try/catch or something similar
                     //i will find a better solution when i get home 
                     const aiResponse = reaction.message.content;
-                    await saveToJSONL(systemPrompt, userPrompt, aiResponse);
+                    await saveToJSONL(trainingPrompt, userPrompt, aiResponse);
                 }
             });
     
@@ -299,7 +300,7 @@ class Bucket extends EventEmitter {
                 const configData = await getConfig();
     
                 if (message.mentions.has(this.client.user)) {
-                    message.channel.sendTyping();
+                    await message.channel.sendTyping();
                     this.totalPings++;
                     this.botState = `Activated by ${message.author.tag}`;
                     //console.log(`Got Ping! It's from ${message.author.tag}`);
