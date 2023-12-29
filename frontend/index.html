@@ -8,44 +8,50 @@
         <link rel="stylesheet" href="css/bootstrap.min.css">
         <link rel="stylesheet" href="css/custom.css">
         <link rel="preload" href="css/backdroponly.css" as="style" onload="this.onload=null;this.rel='stylesheet'">
+        <script src="css/bootstrap.bundle.min.js"></script>
+        <script>
+            const tooltipTriggerList = document.querySelectorAll('[data-bs-toggle="tooltip"]')
+            const tooltipList = [...tooltipTriggerList].map(tooltipTriggerEl => new bootstrap.Tooltip(tooltipTriggerEl))
+        </script>
     </head>
     <body>
-        <div class="container-fluid z-n1 position-absolute">
-            <div class="container">
-              <pagelogo>
-                  <div class="container">
-                    <div class="">
-                        <p class="text-center mb-n"><span class="runguszone siteText">Bucket</p>
-                        <p class="text-center fs-5"><span class="badge bg-primary-subtle">version 2.5</span></p>
+        <div class="rounded-top">
+            <div class="container-fluid z-n1 position-absolute">
+                <div class="container">
+                    <pagelogo>
+                        <div class="container">
+                        <div class="">
+                            <p class="text-center mb-n"><span class="runguszone siteText">Bucket</p>
+                            <p class="text-center fs-5"><span class="badge bg-primary-subtle">version 2.5</span></p>
+                        </div>
+                    </div>
+                    </pagelogo>
+                    <helloarea>
+                    <div class="container alert frostedglass">
+                        <div id="botInfo">
+                            <p class="runguszone text-center fs-3 lead">
+                                Total Pings: <span class="badge bg-info-subtle"><span id="totalPings">0</span></span> 
+                                <br>Blocked Words: <span id="blockedWordsCount"><span class="badge bg-success">0</span></span>
+                                <br>Messages Saved: <span class="badge bg-success"><span id="trainingDataFromMessage">0</span></span></p>
+                            <hr>
+                            <p class="text-center fs-4 lead">
+                                Connected As: <span class="badge bg-secondary-subtle"><span id="botTag"><span class="spinner-border spinner-border-sm" role="status"></span></span></span>
+                                <br>
+                                Bot State: <span class="badge bg-primary"><span id="botState"><span class="spinner-border spinner-border-sm" role="status"></span></span></span>
+                            </p>
+                        </div>
+                    </div>
+                    </helloarea>
+                    <div class="container alert frostedglass">
+                        <p class="lead text-center runguszone fs-3">Recent Messages:</p>
+                        <div id="messagesContainer"></div>
                     </div>
                 </div>
-              </pagelogo>
-              <helloarea>
-                <div class="container alert frostedglass">
-                    <div id="botInfo">
-                        <p class="runguszone text-center fs-3 lead">
-                            Total Pings: <span class="badge bg-info-subtle"><span id="totalPings">0</span></span> 
-                            <br>Blocked Words: <span id="blockedWordsCount"><span class="badge bg-success">0</span></span>
-                            <br>Messages Saved: <span class="badge bg-success"><span id="trainingDataFromMessage">0</span></span></p>
-                        <hr>
-                        <p class="text-center fs-4 lead">
-                            Connected As: <span class="badge bg-secondary-subtle"><span id="botTag"><span class="spinner-border spinner-border-sm" role="status"></span></span></span>
-                            <br>
-                            Bot State: <span class="badge bg-primary"><span id="botState"><span class="spinner-border spinner-border-sm" role="status"></span></span></span>
-                        </p>
-                    </div>
-                </div>
-              </helloarea>
-                <div class="container alert frostedglass">
-                    <p class="lead text-center runguszone fs-3">Recent Messages:</p>
-                    <div id="messagesContainer"></div>
-                </div>
-                
-
-
+            </div>
+        </div>
+    </body>
         <script>
             const { ipcRenderer } = require('electron');
-
             ipcRenderer.on('bot-update', (event, data) => {
                 document.getElementById('totalPings').textContent = data.totalPings;
                 if (data.blockedWordsCount > 0) {

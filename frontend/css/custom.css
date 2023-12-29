@@ -1,1 +1,9 @@
 .stickyBar{color:#fff;position:fixed}.runguszone{font-family:roboto slab,serif}.sidewaysText{writing-mode:vertical-lr;text-orientation:mixed}.ml-n{margin-left:-2rem!important}.mt-n{margin-top:-1rem!important}.margin-negative-for-main-text{margin-top:-1.5rem!important}.mb-n{margin-bottom:-.3rem!important}.mb-n2{margin-bottom:0!important}.siteText{font-size:350%}.smallLink{font-size:75%}.hello{font-family:nanum pen script,cursive;font-size:800%}.frostedglass:before{content:"";position:absolute;background:inherit;z-index:-1;top:0;left:0;right:0;bottom:0;box-shadow:inset 0 0 2000px rgba(0,0,0,.5);filter:blur(10px)}.frostedglass{box-shadow:0 0 1rem 0 #000;border-radius:10px;position:relative;z-index:1;background:inherit;overflow:hidden;backdrop-filter:blur(20px)}p{color:#fff}
+.titlebar {
+    -webkit-user-select: none;
+    -webkit-app-region: drag;
+}
+
+.titlebar-button {
+-webkit-app-region: no-drag;
+}
