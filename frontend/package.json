@@ -1,7 +1,7 @@
 {
   "dependencies": {
     "discord.js": "^14.14.1",
-    "electron": "^28.1.0",
+    "electron-squirrel-startup": "^1.0.0",
     "inquirer": "^9.2.12",
     "node-fetch": "^3.3.2",
     "openai": "^4.21.0"
@@ -15,7 +15,9 @@
     "url": "git+https://github.com/runguszone/Bucket.git"
   },
   "scripts": {
-    "start": "electron ."
+    "start": "electron-forge start",
+    "package": "electron-forge package",
+    "make": "electron-forge make"
   },
   "keywords": [
     "bucket"
@@ -25,5 +27,14 @@
   "bugs": {
     "url": "https://github.com/runguszone/Bucket/issues"
   },
-  "homepage": "https://github.com/runguszone/Bucket#readme"
+  "homepage": "https://github.com/runguszone/Bucket#readme",
+  "devDependencies": {
+    "@electron-forge/cli": "^7.2.0",
+    "@electron-forge/maker-deb": "^7.2.0",
+    "@electron-forge/maker-rpm": "^7.2.0",
+    "@electron-forge/maker-squirrel": "^7.2.0",
+    "@electron-forge/maker-zip": "^7.2.0",
+    "@electron-forge/plugin-auto-unpack-natives": "^7.2.0",
+    "electron": "^28.1.0"
+  }
 }

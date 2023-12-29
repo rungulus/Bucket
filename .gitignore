@@ -10,3 +10,4 @@ logs
 data
 saved-messages.jsonl
 venv
+out
