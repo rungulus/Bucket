@@ -8,30 +8,34 @@ let mainWindow;
 
 function createWindow() {
     mainWindow = new BrowserWindow({
-        width: 500,
-        height: 700,
+        width: 1250,
+        height: 900,
+        minWidth: 1250,
+        minHeight: 900,
         title: "Bucket",
         webPreferences: {
             nodeIntegration: true,
             contextIsolation: false
         },
         icon: __dirname + `/css/bucket.png`,
-        autoHideMenuBar: true,
-        resizable: false
+        autoHideMenuBar: true
     });
 
     mainWindow.loadFile('index.html');
     setInterval(() => {
         const data = Bot.emitUpdate();
         mainWindow.webContents.send('bot-update', data);
-    }, 500);
+    }, 1000);
     setInterval(() => {
         const recentMessages = Bot.getRecentMessages();
         mainWindow.webContents.send('recent-messages-update', recentMessages);
-    }, 500);
+    }, 1000);
 
     Bot.on('update', (data) => {
         mainWindow.webContents.send('bot-update', data);
+    });
+    Bot.on('error', (error) => {
+        mainWindow.webContents.send('error-update', error);
     });
 }
 

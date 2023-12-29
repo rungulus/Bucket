@@ -8,11 +8,17 @@
         <link rel="stylesheet" href="css/bootstrap.min.css">
         <link rel="stylesheet" href="css/custom.css">
         <link rel="preload" href="css/backdroponly.css" as="style" onload="this.onload=null;this.rel='stylesheet'">
-        <script src="css/bootstrap.bundle.min.js"></script>
-        <script>
-            const tooltipTriggerList = document.querySelectorAll('[data-bs-toggle="tooltip"]')
-            const tooltipList = [...tooltipTriggerList].map(tooltipTriggerEl => new bootstrap.Tooltip(tooltipTriggerEl))
-        </script>
+        <style>
+            ::-webkit-scrollbar {
+                display: none;
+            }
+            .noselect {
+                user-select: none;
+            }
+            html {
+                max-width: 85%;
+            }
+        </style>
     </head>
     <body>
         <div class="rounded-top">
@@ -21,31 +27,53 @@
                     <pagelogo>
                         <div class="container">
                         <div class="">
-                            <p class="text-center mb-n"><span class="runguszone siteText">Bucket</p>
-                            <p class="text-center fs-5"><span class="badge bg-primary-subtle">version 2.5</span></p>
+                            <p class="text-center mb-n"><span class="runguszone siteText noselect">Bucket</p>
+                            <p class="text-center fs-5"><span class="badge bg-primary-subtle noselect">version 2.5</span></p>
                         </div>
                     </div>
                     </pagelogo>
                     <helloarea>
-                    <div class="container alert frostedglass">
-                        <div id="botInfo">
-                            <p class="runguszone text-center fs-3 lead">
-                                Total Pings: <span class="badge bg-info-subtle"><span id="totalPings">0</span></span> 
-                                <br>Blocked Words: <span id="blockedWordsCount"><span class="badge bg-success">0</span></span>
-                                <br>Messages Saved: <span class="badge bg-success"><span id="trainingDataFromMessage">0</span></span></p>
-                            <hr>
-                            <p class="text-center fs-4 lead">
-                                Connected As: <span class="badge bg-secondary-subtle"><span id="botTag"><span class="spinner-border spinner-border-sm" role="status"></span></span></span>
-                                <br>
-                                Bot State: <span class="badge bg-primary"><span id="botState"><span class="spinner-border spinner-border-sm" role="status"></span></span></span>
-                            </p>
+                        <div class="row">
+                            <div class="col-12">
+                                <div class="container alert frostedglass noselect">
+                                    <p class="text-center fs-4 lead mb-n mt-n">
+                                        <span class="runguszone">Bot State: </span><span class="badge bg-primary"><span id="botState"><span class="spinner-border spinner-border-sm" role="status"></span></span></span>
+                                    </p>
+                                </div>
+                            </div>
                         </div>
-                    </div>
+                        <div class="row">
+                            <div class="col-5">
+                                <div class="container alert frostedglass noselect">
+                                    <div id="botInfo">
+                                            <p class="text-center fs-4 lead">
+                                                <span class="runguszone">Connected As: </span><span class="badge bg-secondary-subtle"><span id="botTag"><span class="spinner-border spinner-border-sm" role="status"></span></span></span>
+                                            </p>
+                                    </div>
+                                </div>
+                                <div class="container alert frostedglass noselect">
+                                    <div id="botInfo">
+                                            <p class="runguszone text-center fs-3 lead">
+                                                Total Pings: <span class="badge bg-info-subtle"><span id="totalPings">0</span></span> 
+                                                <br>Blocked Words: <span id="blockedWordsCount"><span class="badge bg-success">0</span></span>
+                                                <br>Messages Saved: <span class="badge bg-success"><span id="trainingDataFromMessage">0</span></span></p>
+                                    </div>
+                                </div>
+                                <div class="container alert frostedglass">
+                                    <p class="lead text-center runguszone fs-3 noselect">Latest Error:</p>
+                                    <div class="container alert frostedglass"><div id="errorContainer">Not Yet Implemented!!!</div></div>
+                                </div>
+                            </div>
+                            <div class="col-7">
+                                <div class="container alert frostedglass">
+                                    <p class="lead text-center runguszone fs-3 noselect">Recent Messages:</p>
+                                    <div id="messagesContainer"></div>
+                                </div>
+
+                            </div>
+                        </div>
                     </helloarea>
-                    <div class="container alert frostedglass">
-                        <p class="lead text-center runguszone fs-3">Recent Messages:</p>
-                        <div id="messagesContainer"></div>
-                    </div>
+                    
                 </div>
             </div>
         </div>
@@ -74,7 +102,7 @@
                         <p>${message.sender}: ${message.originalMessage}</p>
                         <p>Pre-Filter: ${message.preFilteredMessage}</p>
                         <p>Filtered: ${message.filteredMessage}</p>
-                        <span class="badge bg-dark-subtle">Tokens: I-${message.inputTokensUsed} O-${message.outputTokensUsed} T-${message.totalTokensUsed}</span>
+                        <span class="badge bg-dark-subtle noselect">Tokens: I-${message.inputTokensUsed} O-${message.outputTokensUsed} T-${message.totalTokensUsed}</span>
                     `;
 
                     // Insert the new message at the beginning of the container
