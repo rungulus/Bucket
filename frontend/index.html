@@ -63,14 +63,6 @@
                     const messageDiv = document.createElement('div');
                     messageDiv.className = 'container alert frostedglass'; // Apply CSS class for styling
 
-                    // const tokenInfoDiv = document.createElement('div');
-                    // tokenInfoDiv.className = 'token-info'; // CSS class for styling
-                    // tokenInfoDiv.innerHTML = `
-                    //     <p>Input Tokens: ${message.inputTokensUsed}</p>
-                    //     <p>Output Tokens: ${message.outputTokensUsed}</p>
-                    //     <p>Total Tokens: ${message.totalTokensUsed}</p>
-                    // `;
-
                     // Constructing the message content
                     messageDiv.innerHTML = `
                         <p>${message.sender}: ${message.originalMessage}</p>
@@ -78,7 +70,13 @@
                         <p>Filtered: ${message.filteredMessage}</p>
                         <span class="badge bg-dark-subtle">Tokens: I-${message.inputTokensUsed} O-${message.outputTokensUsed} T-${message.totalTokensUsed}</span>
                     `;
-                    messagesContainer.appendChild(messageDiv);
+
+                    // Insert the new message at the beginning of the container
+                    if (messagesContainer.firstChild) {
+                        messagesContainer.insertBefore(messageDiv, messagesContainer.firstChild);
+                    } else {
+                        messagesContainer.appendChild(messageDiv); // Use appendChild if the container is empty
+                    }
                 });
             });
         </script>

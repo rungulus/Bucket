@@ -24,6 +24,24 @@ async function loadInquirer() {
     inquirer = (await import('inquirer')).default;
 }
 
+const saveToJSONL = async(systemPrompt, userPrompt, aiResponse) => {
+    const data = {
+        messages: [
+            { role: 'system', content: systemPrompt },
+            { role: 'user', content: userPrompt },
+            { role: 'assistant', content: aiResponse }
+            //try to save in chat completion format
+        ]
+    };
+    try {
+        const jsonlData = JSON.stringify(data) + '\n';
+        fs.appendFileSync('saved-messages.jsonl', jsonlData);
+        botState = 'Idle';
+    } catch (error) {
+        latestError = 'Error saving data to JSONL file:', error;
+    }
+};
+
 class Bucket extends EventEmitter {
     constructor() {
         super();
@@ -247,8 +265,8 @@ class Bucket extends EventEmitter {
                     return "[Generic Error - probably OpenAI]";
                 }
             };
-    
-            const blockedWords = await getBlockedWords(severityCategory);
+
+            
     
             this.client.on('ready', () => {
                 this.botTag = this.client.user.tag;
@@ -278,6 +296,7 @@ class Bucket extends EventEmitter {
                 if (message.channelId !== this.allowedChannelId) {
                     return; //we don't care if it's not in the channel
                 }
+                const configData = await getConfig();
     
                 if (message.mentions.has(this.client.user)) {
                     message.channel.sendTyping();
@@ -300,13 +319,13 @@ class Bucket extends EventEmitter {
     
                     if (response) {
                         this.botState = 'Processing Reply';
-                        
+                        const blockedWords = await getBlockedWords(configData.config.severityCategory);
                         //1984 module
                         this.filteredResponse = response.replace(/<@!\d+>/g, '') //remove ping tags (<@bunchofnumbers>)
-                        if (this.removeLinks == 1) {
+                        if (configData.config.removeLinks == 1) {
                             this.filteredResponse.replace(/(https?:\/\/[^\s]+)/gi, '~~link removed~~'); //replace links with link removed
                         }
-                        if (this.removePings == 1) {
+                        if (configData.config.removePings == 1) {
                             this.filteredResponse.replace(/@/g, '@\u200B'); //place invisible space between @ and words so bot can't ping
                         }
                         //slur filtering

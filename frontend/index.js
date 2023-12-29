@@ -10,6 +10,7 @@ function createWindow() {
     mainWindow = new BrowserWindow({
         width: 500,
         height: 700,
+        title: "Bucket",
         webPreferences: {
             nodeIntegration: true,
             contextIsolation: false
@@ -23,11 +24,11 @@ function createWindow() {
     setInterval(() => {
         const data = Bot.emitUpdate();
         mainWindow.webContents.send('bot-update', data);
-    }, 1000);
+    }, 500);
     setInterval(() => {
         const recentMessages = Bot.getRecentMessages();
         mainWindow.webContents.send('recent-messages-update', recentMessages);
-    }, 1000);
+    }, 500);
 
     Bot.on('update', (data) => {
         mainWindow.webContents.send('bot-update', data);
