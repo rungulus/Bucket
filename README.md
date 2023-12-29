@@ -88,6 +88,7 @@ Bucket will log responses, and who triggered the bot in the `/bot/logs/` folder.
 
 ## Frontend
 I'm working on a better frontend for Bucket. If you'd like to test it, go ahead and 
+- copy config.json from `bot` to `frontend`
 - open cmd/terminal in the `frontend` folder
 - run `npm install`
 - once that's done, run `npm start`
