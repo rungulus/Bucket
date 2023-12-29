@@ -3,8 +3,23 @@ const fs = require("fs");
 const OpenAI = require("openai");
 const Discord = require("discord.js");
 const {Events} = require("discord.js");
+//const { config } = require('process');
 let inquirer;
 let severityCategory;
+
+async function getConfig(){
+    //console.log('i hope config.json is there');
+    try {
+        configContents = await fs.promises.readFile('config.json', 'utf8');
+        config = JSON.parse(configContents);
+    } catch (error) {
+        console.log('config.json isnt there :(');
+        //need to handle this case
+    } return {
+        config
+    }
+}
+
 async function loadInquirer() {
     inquirer = (await import('inquirer')).default;
 }
@@ -12,6 +27,7 @@ async function loadInquirer() {
 class Bucket extends EventEmitter {
     constructor() {
         super();
+        this.recentMessages = [];
         this.client = new Discord.Client({
             intents: [
                 Discord.GatewayIntentBits.Guilds,
@@ -28,22 +44,35 @@ class Bucket extends EventEmitter {
     async initialize() {
         await loadInquirer();
         await this.init();
+        await getConfig();
+        await this.loadConfig();
+    }
+
+    addRecentMessage(messageData) {
+        this.recentMessages.push(messageData);
+        if (this.recentMessages.length > 10) { // keep only last 10
+            this.recentMessages.shift();
+        }
+    }
+
+    getRecentMessages() {
+        return this.recentMessages;
     }
 
     async init() {
+        //console.log('Getting OpenAI Ready');
+        const configData = await getConfig();
+        //console.log('Got OpenAI API Key!');
+        const openaiapikey = configData.config.openaiapi.apiKey;
+        //console.log(openaiapikey);
+        this.botState = 'Waiting for AI';
+        this.openai = new OpenAI({ apiKey: openaiapikey });
+        this.processMessages();
+    }
+    async loadConfig() {
         try {
-            let config;
-            console.log('checking config.json');
-            try {
-                config = JSON.parse(await fs.promises.readFile('config.json', 'utf8'));
-            } catch (error) {
-                console.log('config.json not found. Please enter the configuration details.');
-                config = await this.promptForConfig();
-                await fs.promises.writeFile('config.json', JSON.stringify(config, null, 2));
-                console.log('Configuration saved to config.json.');
-            }
-            this.applyConfig(config);
-            console.log('getting ready');
+            //this.applyConfig(config);
+            //console.log('Initializing settings');
             this.discordToken = config.discordToken;
             this.openaiapi = config.openaiapi;
             this.severityCategory = config.severityCategory;
@@ -68,12 +97,9 @@ class Bucket extends EventEmitter {
             this.filteredResponse = '';
             this.userMessageContent = '';
             this.originalMessage = '';
-    } catch (error) {
-        console.error('Error during initialization:', error);
-    }
-        console.log('starting openai');
-        this.openai = new OpenAI({ apiKey: this.openaiapi.apiKey });
-        this.processMessages();
+        } catch (error) {
+            console.error('Error during initialization:', error);
+        }
     }
 
     async promptForConfig() {
@@ -87,17 +113,6 @@ class Bucket extends EventEmitter {
         ];
         return inquirer.prompt(questions);
     }
-    applyConfig(config) {
-        console.log('saving config.json');
-        this.discordToken = config.discordToken;
-        this.openaiapi = config.openaiapi;
-        this.severityCategory = config.severityCategory;
-        this.allowedChannelId = config.allowedChannelId;
-        this.trainEmoji = config.trainEmoji;
-        this.reactionCount = config.reactionCount;
-        this.removePings = config.removePings;
-        this.removeLinks = config.removeLinks;
-    }
 
     async stop() {
         try {
@@ -105,18 +120,18 @@ class Bucket extends EventEmitter {
                 console.log('Bye Bucket!');
                 await this.client.destroy();
                 this.botState = 'Offline';
-                this.emitUpdate();
             }
 
-            console.log('Bot stopped gracefully.');
+            console.log('Bucket is asleep');
         } catch (error) {
             console.error('Error while stopping the bot:', error);
             this.latestError = `Error while stopping the bot: ${error}`;
-            this.emitUpdate();
         }
     }
 
     async logToFile(logData){
+        const logDirectory = 'logs'; // Directory to store log files
+        const maxLogFileSize = 10 * 1024 * 1024; // 10 MB (in bytes)
         const currentDate = new Date().toISOString().slice(0, 10); // Get current date for log file name
     
         try {
@@ -127,7 +142,7 @@ class Bucket extends EventEmitter {
             try {
                 fileStats = await fs.promises.stat(logFileName);
             } catch (err) {
-                botState = 'Creating Log File';
+                this.botState = 'Creating Log File';
             }
     
             const logContent = `${logData}\n`;
@@ -140,27 +155,13 @@ class Bucket extends EventEmitter {
                 await fs.promises.appendFile(logFileName, logContent);
             }
     
-            botState = 'Writing to log file';
+            this.botState = 'Writing to log file';
         } catch (error) {
             console.log('Error writing to log file:', error);
         }
     };
 
-    emitUpdate() {
-        console.log('Updating UI');
-        this.emit('update', {
-            botTag: this.botTag,
-            botState: this.botState,
-            totalPings: this.totalPings,
-            blockedWordsCount: this.blockedWordsCount,
-            trainingDataFromMessage: this.trainingDataFromMessage,
-            totalTokensUsed: this.totalTokensUsed,
-            inputTokensUsed: this.inputTokensUsed,
-            totalInputTokensUsed: this.totalInputTokensUsed,
-            outputTokensUsed: this.outputTokensUsed,
-            totalOutputTokensUsed: this.totalOutputTokensUsed
-        });
-    }
+
     
     async saveToJSONL(systemPrompt, userPrompt, aiResponse) {
         const data = {
@@ -205,23 +206,31 @@ class Bucket extends EventEmitter {
     
             const sendChatMessage = async(message) => {
                 try {
+                    //console.log('Getting OpenAI settings');
+                    const configData = await getConfig();
+                    //console.log('Got OpenAI Settings!');
+                    const systemPrompt = configData.config.openaiapi.systemPrompt;
+                    const modelId = configData.config.openaiapi.modelId;
+                    const temperature = configData.config.openaiapi.temperature;
+                    const maxTokens = configData.config.openaiapi.maxTokens;
+                    const frequencyPenalty = configData.config.openaiapi.frequencyPenalty;
+                    const presencePenalty = configData.config.openaiapi.presencePenalty;
                     this.botState = 'Waiting for AI';
-                    
                     const completions = await this.openai.chat.completions.create({
                         messages: [
-                            { role: "system", content: `${this.systemPrompt}` },
+                            { role: "system", content: `${systemPrompt}` },
                             { role: "user", content: `${message}` }
                         ],
-                        model: `${this.modelId}`,
-                        frequency_penalty: this.frequencyPenalty,
-                        presence_penalty: this.presencePenalty,
-                        temperature: this.temperature,
-                        max_tokens: this.maxTokens
+                        model: `${modelId}`,
+                        frequency_penalty: frequencyPenalty,
+                        presence_penalty: presencePenalty,
+                        temperature: temperature,
+                        max_tokens: maxTokens
                     });
     
                     if (completions.choices && completions.choices.length > 0) {
                         const responseContent = completions.choices[0].message.content;
-                        console.log('Response Content:', responseContent);
+                        //console.log('Response Content:', responseContent);
                         this.outputTokensUsed = parseInt(completions.usage.completion_tokens);
                         this.totalOutputTokensUsed += this.outputTokensUsed;
                         this.inputTokensUsed = parseInt(completions.usage.prompt_tokens);
@@ -231,6 +240,7 @@ class Bucket extends EventEmitter {
                     } else {
                         console.log('No valid response received from the bot.');
                         return '[OpenAI Error - No valid response]';
+                        
                     }
                 } catch (error) {
                     console.error('OpenAI APi Error:', error);
@@ -273,6 +283,7 @@ class Bucket extends EventEmitter {
                     message.channel.sendTyping();
                     this.totalPings++;
                     this.botState = `Activated by ${message.author.tag}`;
+                    //console.log(`Got Ping! It's from ${message.author.tag}`);
                     
                     const sender = message.author.tag;
                     this.originalMessage = message.content.replace(/<@!\d+>/g, '').replace(`<@${this.client.user.id}>`, '').trim(); //dont send the ping to the ai
@@ -342,23 +353,47 @@ class Bucket extends EventEmitter {
                         console.log('No response from the bot.');
                     }
                     this.botState = 'Logging Data';
-                    
+                    logData += `\nInput Tokens Used: ${this.inputTokensUsed}`; // Append input tokens used to log data
+                    logData += `\nOutput Tokens Used: ${this.outputTokensUsed}`; // Append output tokens used to log data
+                    logData += `\nTotal Tokens Used: ${this.totalTokensUsed} - Total Input:${this.totalInputTokensUsed} - Total Output:${this.totalOutputTokensUsed}`; // Append total tokens used to log data
+                    logData += '\n--';
+                    logData += `\nPre-Filter: ${response}`;
+                    logData += '\n--';
+                    logData += `\nFiltered: ${this.filteredResponse}`;
+                    logData += '\n------------------------------------';
                     await this.logToFile(logData); // Write log data to file
+                    let messageData = {
+                        sender: sender,
+                        originalMessage: this.originalMessage,
+                        preFilteredMessage: response,
+                        filteredMessage: this.filteredResponse,
+                        inputTokensUsed: this.inputTokensUsed,
+                        outputTokensUsed: this.outputTokensUsed,
+                        totalTokensUsed: this.totalTokensUsed,
+                        totalInputTokensUsed: this.totalInputTokensUsed,
+                        totalOutputTokensUsed: this.totalOutputTokensUsed
+                    };
+                    
+                    this.addRecentMessage(messageData);
                     this.botState = 'Idle';
                     
     
     
                 }
             });
-    
-            await this.client.login(this.discordToken);
+            
+            //console.log('Getting Discord Token');
+            const configData = await getConfig();
+            //console.log('Got Discord Token!');
+            const discordToken = configData.config.discordToken;
+            await this.client.login(discordToken);
         } catch (error) {
             console.log('Error:', error);
         }
     };
 
     emitUpdate() {
-        this.emit('update', {
+        return {
             botTag: this.botTag,
             botState: this.botState,
             totalPings: this.totalPings,
@@ -368,8 +403,10 @@ class Bucket extends EventEmitter {
             inputTokensUsed: this.inputTokensUsed,
             totalInputTokensUsed: this.totalInputTokensUsed,
             outputTokensUsed: this.outputTokensUsed,
-            totalOutputTokensUsed: this.totalOutputTokensUsed
-        });
+            totalOutputTokensUsed: this.totalOutputTokensUsed,
+            response: this.responseContent,
+            filteredResponse: this.filteredResponse
+        };
     }
 }
 

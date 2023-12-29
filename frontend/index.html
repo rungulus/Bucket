@@ -1,33 +1,66 @@
 <!DOCTYPE html>
 <html>
-<head>
-    <title>Bucket</title>
-    <style>
-        body { font-family: Arial, sans-serif; }
-        .counter { margin-bottom: 20px; }
-    </style>
-</head>
-<body>
-    <h1>Bucket</h1>
-    <div id="botInfo">
-        <div class="counter">Total Pings: <span id="totalPings">0</span></div>
-        <div class="counter">Blocked Words: <span id="blockedWordsCount">0</span></div>
-        <div class="counter">Messages Saved: <span id="trainingDataFromMessage">0</span></div>
-        <div class="counter">Total Tokens Used: <span id="totalTokensUsed ">0</span></div>
-        <div class="counter">Input Tokens Used: <span id="inputTokensUsed">0</span></div>
-        <div class="counter">Output Tokens Used: <span id="outputTokensUsed">0</span></div>
-        <div class="counter">Total Input: <span id="totalInputTokensUsed">0</span></div>
-        <div class="counter">Total Output: <span id="totalOutputTokensUsed">0</span></div>
-    </div>
+    <head>
+        <title>Bucket</title>
+        <style>
+            body { font-family: Arial, sans-serif; }
+            .counter { margin-bottom: 20px; }
+            .message {
+                margin-bottom: 10px;
+                padding: 5px;
+                border: 1px solid #ddd;
+            }
+        </style>
+    </head>
+    <body>
+        <h1>Bucket</h1>
+        <div id="botInfo">
+            <div class="counter">Total Pings: <span id="totalPings">0</span></div>
+            <div class="counter">Blocked Words: <span id="blockedWordsCount">0</span></div>
+            <div class="counter">Messages Saved: <span id="trainingDataFromMessage">0</span></div>
+            <div class="counter">Total Tokens Used: <span id="totalTokensUsed ">0</span></div>
+            <div class="counter">Input Tokens Used: <span id="inputTokensUsed">0</span></div>
+            <div class="counter">Output Tokens Used: <span id="outputTokensUsed">0</span></div>
+            <div class="counter">Total Input: <span id="totalInputTokensUsed">0</span></div>
+            <div class="counter">Total Output: <span id="totalOutputTokensUsed">0</span></div>
+            <div class="counter">Total Output: <span id="response">0</span></div>
+            <div class="counter">Total Output: <span id="filteredResponse">0</span></div>
+        </div>
+        <div id="messagesContainer"></div>
 
-    <script>
-        const { ipcRenderer } = require('electron');
 
-        ipcRenderer.on('bot-update', (event, data) => {
-            document.getElementById('totalPings').textContent = data.totalPings;
-            document.getElementById('blockedWordsCount').textContent = data.blockedWordsCount;
-            document.getElementById
-        });
-    </script>
-</body>
+        <script>
+            const { ipcRenderer } = require('electron');
+
+            ipcRenderer.on('bot-update', (event, data) => {
+                document.getElementById('totalPings').textContent = data.totalPings;
+                document.getElementById('blockedWordsCount').textContent = data.blockedWordsCount;
+                document.getElementById('trainingDataFromMessage').textContent = data.trainingDataFromMessage;
+                document.getElementById('totalTokensUsed').textContent = data.totalTokensUsed;
+                document.getElementById('inputTokensUsed').textContent = data.inputTokensUsed;
+                document.getElementById('outputTokensUsed').textContent = data.outputTokensUsed;
+                document.getElementById('totalInputTokensUsed').textContent = data.totalInputTokensUsed;
+                document.getElementById('totalOutputTokensUsed').textContent = data.totalOutputTokensUsed;
+                document.getElementById('response').textContent = data.response;
+                document.getElementById('filteredResponse').textContent = data.filteredResponse;
+            });
+
+            ipcRenderer.on('recent-messages-update', (event, messages) => {
+                const messagesContainer = document.getElementById('messagesContainer');
+                messagesContainer.innerHTML = ''; // Clear existing messages
+                messages.forEach(message => {
+                    const messageDiv = document.createElement('div');
+                    messageDiv.className = 'message'; // Apply CSS class for styling
+                    messageDiv.innerHTML = `
+                        <p>Sender: ${message.sender}</p>
+                        <p>Original Message: ${message.originalMessage}</p>
+                        <p>Pre-filtered Message: ${message.preFilteredMessage}</p>
+                        <p>Filtered Message: ${message.filteredMessage}</p>
+                    `;
+                    messagesContainer.appendChild(messageDiv);
+                });
+            });
+        </script>
+
+    </body>
 </html>
