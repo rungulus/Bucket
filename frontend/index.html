@@ -25,46 +25,68 @@
             <div class="container-fluid z-n1 position-absolute">
                 <div class="container">
                     <pagelogo>
-                        <div class="container">
-                        <div class="">
-                            <p class="text-center mb-n"><span class="runguszone siteText noselect">Bucket</p>
-                            <p class="text-center fs-5"><span class="badge bg-primary-subtle noselect">version 2.5</span></p>
-                        </div>
-                    </div>
+                        <!-- <div class="container">
+                            <div class="container alert frostedglass">
+                                <p class="text-center mb-n"><span class="runguszone siteText noselect">Bucket</p>
+                                <p class="text-center fs-5"><span class="badge bg-primary-subtle noselect">version 2.5</span></p>
+                            </div>
+                        </div> -->
                     </pagelogo>
                     <helloarea>
                         <div class="row">
-                            <div class="col-12">
-                                <div class="container alert frostedglass noselect">
-                                    <p class="text-center fs-4 lead mb-n mt-n">
-                                        <span class="runguszone">Bot State: </span><span class="badge bg-primary"><span id="botState"><span class="spinner-border spinner-border-sm" role="status"></span></span></span>
-                                    </p>
+                            <div class="col-10">
+                                <div class="container alert frostedglass noselect mt-3">
+                                    <p class="text-center mb-n"><span class="runguszone siteText noselect">Bucket</p>
+                                    
+                                </div>
+                            </div>
+                            <div class="col-2">
+                                <div class="container alert frostedglass noselect mt-3">
+                                    <img src="css/bucket.logo.png" height="50" class="mx-auto d-block">
+                                    <p class="text-center fs-4 mb-n"><span class="badge bg-primary-subtle noselect">version 2.5</span></p>
                                 </div>
                             </div>
                         </div>
+                    </div>
                         <div class="row">
                             <div class="col-5">
                                 <div class="container alert frostedglass noselect">
                                     <div id="botInfo">
-                                            <p class="text-center fs-4 lead">
-                                                <span class="runguszone">Connected As: </span><span class="badge bg-secondary-subtle"><span id="botTag"><span class="spinner-border spinner-border-sm" role="status"></span></span></span>
-                                            </p>
+                                        <p class="runguszone text-center fs-3 mb-n">Bot Info</p>
+                                        <hr class="m-0">
+                                        <p class="text-center fs-4 lead mb-n">
+                                            <span class="runguszone">Bot State: </span><span class="badge bg-primary"><span id="botState"><span class="spinner-border spinner-border-sm" role="status"></span></span></span>
+                                            <br>
+                                            <span class="runguszone">Connected As: </span><span class="badge bg-secondary-subtle"><span id="botTag"><span class="spinner-border spinner-border-sm" role="status"></span></span></span>
+                                        </p>
                                     </div>
                                 </div>
                                 <div class="container alert frostedglass noselect">
                                     <div id="botInfo">
-                                            <p class="runguszone text-center fs-3 lead">
+                                        <p class="runguszone text-center fs-3 mb-n">API Status</p>
+                                        <p class="text-center fs-4"><span class="badge bg-warning noselect">not implemented</span></p>
+                                        <hr class="m-0">
+                                        <p class="runguszone text-center fs-4 lead mb-n">
+                                            Discord: <span id="discordstatus"><span class="badge bg-info"><span class="spinner-border spinner-border-sm" role="status"></span></span>
+                                            <br> 
+                                            OpenAI: <span id="openaistatus"><span class="badge bg-info"><span class="spinner-border spinner-border-sm" role="status"></span></span>       
+                                        </p>
+                                    </div>
+                                </div>
+                                <div class="container alert frostedglass">
+                                    <p class="lead text-center runguszone fs-3 noselect">Latest Error:</p>
+                                    <div id="errorContainer"><p class="text-center fs-4"><span class="badge bg-warning noselect">not implemented</span></p></div>
+                                </div>
+                            </div>
+                            <div class="col-7">
+                                <div class="container alert frostedglass noselect">
+                                    <div id="botInfo">
+                                            <p class="runguszone text-center fs-3 lead mb-n">
                                                 Total Pings: <span class="badge bg-info-subtle"><span id="totalPings">0</span></span> 
                                                 <br>Blocked Words: <span id="blockedWordsCount"><span class="badge bg-success">0</span></span>
                                                 <br>Messages Saved: <span class="badge bg-success"><span id="trainingDataFromMessage">0</span></span></p>
                                     </div>
                                 </div>
-                                <div class="container alert frostedglass">
-                                    <p class="lead text-center runguszone fs-3 noselect">Latest Error:</p>
-                                    <div class="container alert frostedglass"><div id="errorContainer">Not Yet Implemented!!!</div></div>
-                                </div>
-                            </div>
-                            <div class="col-7">
                                 <div class="container alert frostedglass">
                                     <p class="lead text-center runguszone fs-3 noselect">Recent Messages:</p>
                                     <div id="messagesContainer"></div>
@@ -90,6 +112,16 @@
                 document.getElementById('botState').innerHTML = data.botState;
             });
 
+            ipcRenderer.on('status-update', (event, data) => {
+                if (data.discord != 0) {
+                    document.getElementById('discordstatus').innerHTML = `<span class="badge bg-success">checkbox</span>`;
+                }
+                if (data.openai != 0) {
+                    document.getElementById('openaistatus').innerHTML = `<span class="badge bg-success">checkbox</span>`;
+                }
+            });
+
+
             ipcRenderer.on('recent-messages-update', (event, messages) => {
                 const messagesContainer = document.getElementById('messagesContainer');
                 messagesContainer.innerHTML = ''; // Clear existing messages
@@ -112,6 +144,19 @@
                         messagesContainer.appendChild(messageDiv); // Use appendChild if the container is empty
                     }
                 });
+            });
+
+            ipcRenderer.on('error-message', (event, errorMessage) => {
+                const errorContainer = document.getElementById('errorContainer'); // Ensure this element exists
+                const errorDiv = document.createElement('div');
+                errorDiv.className = 'container alert frostedglass';
+                errorDiv.innerHTML = `<p class="lead">Error: ${errorMessage}</p>`;
+
+                if (errorContainer.firstChild) {
+                    errorContainer.insertBefore(errorDiv, errorContainer.firstChild);
+                } else {
+                    errorContainer.appendChild(errorDiv);
+                }
             });
         </script>
 

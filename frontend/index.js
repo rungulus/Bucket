@@ -31,11 +31,16 @@ function createWindow() {
         mainWindow.webContents.send('recent-messages-update', recentMessages);
     }, 1000);
 
+    // setInterval(() => {
+    //     const recentMessages = Bot.emitStatus();
+    //     mainWindow.webContents.send('bot-status', recentMessages);
+    // }, 1000);
+
     Bot.on('update', (data) => {
         mainWindow.webContents.send('bot-update', data);
     });
-    Bot.on('error', (error) => {
-        mainWindow.webContents.send('error-update', error);
+    Bot.on('error', (errorMessage) => {
+        mainWindow.webContents.send('error-message', errorMessage);
     });
 }
 

@@ -13,7 +13,7 @@ async function getConfig(){
         configContents = await fs.promises.readFile('config.json', 'utf8');
         config = JSON.parse(configContents);
     } catch (error) {
-        console.log('config.json isnt there :(');
+        this.emit('error', error.message);
         //need to handle this case
     } return {
         config
@@ -116,7 +116,7 @@ class Bucket extends EventEmitter {
             this.userMessageContent = '';
             this.originalMessage = '';
         } catch (error) {
-            console.error('Error during initialization:', error);
+            this.emit('error', error.message);
         }
     }
 
@@ -142,7 +142,7 @@ class Bucket extends EventEmitter {
 
             console.log('Bucket is asleep');
         } catch (error) {
-            console.error('Error while stopping the bot:', error);
+            this.emit('error', error.message);
             this.latestError = `Error while stopping the bot: ${error}`;
         }
     }
@@ -175,7 +175,7 @@ class Bucket extends EventEmitter {
     
             this.botState = 'Writing to log file';
         } catch (error) {
-            console.log('Error writing to log file:', error);
+            this.emit('error', error.message);
         }
     };
 
@@ -217,7 +217,7 @@ class Bucket extends EventEmitter {
                     const filteredWords = wordsWithSeverity.filter(entry => entry.severity >= severityCategory);
                     return filteredWords;
                 } catch (error) {
-                    console.log('Error reading blocked words:', error);
+                    this.emit('error', error.message);
                     return [];
                 }
             };
@@ -256,12 +256,12 @@ class Bucket extends EventEmitter {
                         this.totalTokensUsed += parseInt(completions.usage.total_tokens);
                         return responseContent;
                     } else {
-                        console.log('No valid response received from the bot.');
+                        this.emit('error', `OpenAI Issue, check your settings`);
                         return '[OpenAI Error - No valid response]';
                         
                     }
                 } catch (error) {
-                    console.error('OpenAI APi Error:', error);
+                    this.emit('error', error.message);
                     return "[Generic Error - probably OpenAI]";
                 }
             };
@@ -314,7 +314,7 @@ class Bucket extends EventEmitter {
                     const input = this.originalMessage;
                     this.inputTokensUsed = input.split(' ').length; // Count input tokens
                     const response = await sendChatMessage(input).catch(error => {
-                        console.log('Error sending message:', error);
+                        this.emit('error', error.message);
                         return null;
                     });
     
@@ -367,10 +367,10 @@ class Bucket extends EventEmitter {
                             this.botState = 'Sent Message';
                             
                         } catch (error) {
-                            console.log('Error replying to user in channel:', error);
+                            this.emit('error', error.message);
                         }
                     } else {
-                        console.log('No response from the bot.');
+                        this.emit('error', 'Generic Error');
                     }
                     this.botState = 'Logging Data';
                     logData += `\nInput Tokens Used: ${this.inputTokensUsed}`; // Append input tokens used to log data
@@ -408,7 +408,7 @@ class Bucket extends EventEmitter {
             const discordToken = configData.config.discordToken;
             await this.client.login(discordToken);
         } catch (error) {
-            console.log('Error:', error);
+            this.emit('error', error.message);
         }
     };
 
@@ -428,6 +428,7 @@ class Bucket extends EventEmitter {
             filteredResponse: this.filteredResponse
         };
     }
+
 }
 
 module.exports = Bucket;
