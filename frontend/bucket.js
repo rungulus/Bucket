@@ -6,6 +6,7 @@ const {Events} = require("discord.js");
 //const { config } = require('process');
 let inquirer;
 let severityCategory;
+let previousMessage = "";
 
 async function getConfig(){
     //console.log('i hope config.json is there');
@@ -222,7 +223,7 @@ class Bucket extends EventEmitter {
                 }
             };
     
-            const sendChatMessage = async(message) => {
+            const sendChatMessage = async(message, user) => {
                 try {
                     //console.log('Getting OpenAI settings');
                     const configData = await getConfig();
@@ -237,6 +238,8 @@ class Bucket extends EventEmitter {
                     const completions = await this.openai.chat.completions.create({
                         messages: [
                             { role: "system", content: `${systemPrompt}` },
+                            { role: "assistant", content: `${previousMessage}`},
+                            { role: "user", content: `Message from ${user}` },
                             { role: "user", content: `${message}` }
                         ],
                         model: `${modelId}`,
@@ -305,15 +308,16 @@ class Bucket extends EventEmitter {
                     this.botState = `Activated by ${message.author.tag}`;
                     //console.log(`Got Ping! It's from ${message.author.tag}`);
                     
-                    const sender = message.author.tag;
+                    const sender = message.author.displayName;
                     this.originalMessage = message.content.replace(/<@!\d+>/g, '').replace(`<@${this.client.user.id}>`, '').trim(); //dont send the ping to the ai
+                    //this.originalMessage = sender + ": " + this.originalMessage;
                     this.userMessageContent = this.originalMessage;
-                    let logData = `Sender: ${sender}\nOriginal Message: ${this.originalMessage}`;
+                    let logData = `${this.originalMessage}`;
     
     
                     const input = this.originalMessage;
                     this.inputTokensUsed = input.split(' ').length; // Count input tokens
-                    const response = await sendChatMessage(input).catch(error => {
+                    const response = await sendChatMessage(input, sender).catch(error => {
                         this.emit('error', error.message);
                         return null;
                     });
@@ -356,7 +360,7 @@ class Bucket extends EventEmitter {
                         }
 
                         //log here
-    
+                        previousMessage = this.filteredResponse;
                         try {
                             this.botState = 'Sending Message';
                             
