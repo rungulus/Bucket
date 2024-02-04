@@ -326,7 +326,7 @@ class Bucket extends EventEmitter {
                         this.botState = 'Processing Reply';
                         const blockedWords = await getBlockedWords(configData.config.severityCategory);
                         //1984 module
-                        this.filteredResponse = response.replace(/<@!\d+>/g, '') //remove ping tags (<@bunchofnumbers>)
+                        this.filteredResponse = response.replace(/<@!\d+>/g, `${this.client.user},`) //remove ping tags (<@bunchofnumbers>)
                         if (configData.config.removeLinks == 1) {
                             this.filteredResponse.replace(/(https?:\/\/[^\s]+)/gi, '~~link removed~~'); //replace links with link removed
                         }

@@ -15,8 +15,8 @@ reddit = praw.Reddit(
 )
 
 # Fetch posts from r/twosentencehorror
-subreddit = reddit.subreddit('twosentencehorror')
-posts = list(subreddit.controversial(limit=256))
+subreddit = reddit.subreddit('amitheasshole')
+posts = list(subreddit.top(limit=256))
 
 # Generate JSONL file
 with open('output.jsonl', 'w') as file:
