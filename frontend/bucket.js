@@ -235,6 +235,12 @@ class Bucket extends EventEmitter {
                     const frequencyPenalty = configData.config.openaiapi.frequencyPenalty;
                     const presencePenalty = configData.config.openaiapi.presencePenalty;
                     this.botState = 'Waiting for AI';
+                    //TODO: 
+                    //add previous messages if:
+                    //-message is a reply to a bot message
+                    //-grab original prompt from old message
+                    //we should not send this along if:
+                    //the prompt is a "fresh" response
                     const completions = await this.openai.chat.completions.create({
                         messages: [
                             { role: "system", content: `${systemPrompt}` },
