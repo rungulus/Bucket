@@ -199,6 +199,33 @@ class Bucket extends EventEmitter {
             this.latestError = 'Error saving data to JSONL file:', error;
         }
     };
+
+    async getMessageChain(message, limit = 5) {
+        let chain = [];
+        let currentMessage = message;
+        let count = 0;
+
+        while (currentMessage && currentMessage.reference && currentMessage.reference.messageId && count < limit) {
+            const referenceMessage = await currentMessage.channel.messages.fetch(currentMessage.reference.messageId);
+            if (referenceMessage) {
+                // Prepend the reference message to the chain
+                chain.unshift({
+                    role: referenceMessage.author.id === this.client.user.id ? "assistant" : "user",
+                    content: referenceMessage.content
+                });
+                currentMessage = referenceMessage;
+            }
+            count++;
+        }
+
+        // Include user's message at the end
+        chain.push({
+            role: "user",
+            content: message.content
+        });
+
+        return chain;
+    }
     
     async processMessages(){
         try {
@@ -223,7 +250,7 @@ class Bucket extends EventEmitter {
                 }
             };
     
-            const sendChatMessage = async(message, user) => {
+            const sendChatMessage = async(messages) => {
                 try {
                     //console.log('Getting OpenAI settings');
                     const configData = await getConfig();
@@ -243,11 +270,10 @@ class Bucket extends EventEmitter {
                     //the prompt is a "fresh" response
                     const completions = await this.openai.chat.completions.create({
                         messages: [
-                            { role: "system", content: `${systemPrompt}` },
-                            { role: "assistant", content: `${previousMessage}`},
-                            { role: "user", content: `${user}: ${message}` }
+                            { role: "system", content: systemPrompt },
+                            ...messages // Spread the messages here
                         ],
-                        model: `${modelId}`,
+                        model: modelId,
                         frequency_penalty: frequencyPenalty,
                         presence_penalty: presencePenalty,
                         temperature: temperature,
@@ -308,24 +334,39 @@ class Bucket extends EventEmitter {
                 const configData = await getConfig();
     
                 if (message.mentions.has(this.client.user)) {
+
                     await message.channel.sendTyping();
                     this.totalPings++;
                     this.botState = `Activated by ${message.author.tag}`;
                     //console.log(`Got Ping! It's from ${message.author.tag}`);
                     
                     const sender = message.author.displayName;
+                    
+                    
                     this.originalMessage = message.content.replace(/<@!\d+>/g, '').replace(`<@${this.client.user.id}>`, '').trim(); //dont send the ping to the ai
                     //this.originalMessage = sender + ": " + this.originalMessage;
-                    this.userMessageContent = this.originalMessage;
-                    let logData = `${this.originalMessage}`;
-    
-    
-                    const input = this.originalMessage;
-                    this.inputTokensUsed = input.split(' ').length; // Count input tokens
-                    const response = await sendChatMessage(input, sender).catch(error => {
+                    const isReply = message.reference && message.reference.messageId;
+                    let messagesArray;
+                    if (isReply) {
+                        // If the message is a reply, get the message chain
+                        messagesArray = await this.getMessageChain(message);
+                    } else {
+                        // If it's not a reply, just use the current message
+                        messagesArray = [{ role: "user", content: `${sender}: ${message.content}` }];
+                    }
+                    // Call sendChatMessage with the constructed messages array
+                    const response = await sendChatMessage(messagesArray, sender).catch(error => {
                         this.emit('error', error.message);
                         return null;
                     });
+                    this.userMessageContent = this.originalMessage;
+                    let logData = `${this.originalMessage}`;
+                    const input = this.originalMessage;
+                    this.inputTokensUsed = input.split(' ').length; // Count input tokens
+                    // const response = await sendChatMessage(input, sender).catch(error => {
+                    //     this.emit('error', error.message);
+                    //     return null;
+                    //});
     
                     if (response) {
                         this.botState = 'Processing Reply';
