@@ -200,7 +200,7 @@ class Bucket extends EventEmitter {
         }
     };
 
-    async getMessageChain(message, limit = 5) {
+    async getMessageChain(message, limit = 10) {
         let chain = [];
         let currentMessage = message;
         let count = 0;
