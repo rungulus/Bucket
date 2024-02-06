@@ -239,8 +239,7 @@ class Bucket extends EventEmitter {
                         messages: [
                             { role: "system", content: `${systemPrompt}` },
                             { role: "assistant", content: `${previousMessage}`},
-                            { role: "user", content: `Message from ${user}` },
-                            { role: "user", content: `${message}` }
+                            { role: "user", content: `${user}: ${message}` }
                         ],
                         model: `${modelId}`,
                         frequency_penalty: frequencyPenalty,
