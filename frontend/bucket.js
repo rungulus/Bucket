@@ -204,26 +204,28 @@ class Bucket extends EventEmitter {
         let chain = [];
         let currentMessage = message;
         let count = 0;
-
+    
         while (currentMessage && currentMessage.reference && currentMessage.reference.messageId && count < limit) {
             const referenceMessage = await currentMessage.channel.messages.fetch(currentMessage.reference.messageId);
             if (referenceMessage) {
-                // Prepend the reference message to the chain
+                const senderDisplayName = referenceMessage.member ? referenceMessage.member.displayName : referenceMessage.author.username; // Get sender's display name or username
+                // Prepend the reference message to the chain with the sender's display name
                 chain.unshift({
                     role: referenceMessage.author.id === this.client.user.id ? "assistant" : "user",
-                    content: referenceMessage.content
+                    content: `${senderDisplayName}: ${referenceMessage.content}`
                 });
                 currentMessage = referenceMessage;
             }
             count++;
         }
-
-        // Include user's message at the end
+    
+        // Include user's message at the end with their display name
+        const senderDisplayName = currentMessage.member ? currentMessage.member.displayName : currentMessage.author.username; // Get user's display name or username
         chain.push({
             role: "user",
-            content: message.content
+            content: `${senderDisplayName}: ${currentMessage.content}`
         });
-
+    
         return chain;
     }
     
