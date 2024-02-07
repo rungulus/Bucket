@@ -200,7 +200,7 @@ class Bucket extends EventEmitter {
         }
     };
 
-    async getMessageChain(message, limit = 10) {
+    async getMessageChain(message, limit = 3) {
         let chain = [];
         let currentMessage = message;
         let count = 0;
@@ -259,17 +259,11 @@ class Bucket extends EventEmitter {
                     //console.log('Got OpenAI Settings!');
                     const systemPrompt = configData.config.openaiapi.systemPrompt;
                     const modelId = configData.config.openaiapi.modelId;
-                    const temperature = configData.config.openaiapi.temperature;
-                    const maxTokens = configData.config.openaiapi.maxTokens;
-                    const frequencyPenalty = configData.config.openaiapi.frequencyPenalty;
-                    const presencePenalty = configData.config.openaiapi.presencePenalty;
+                    const temperature = parseInt(configData.config.openaiapi.temperature);
+                    const maxTokens = parseInt(configData.config.openaiapi.maxTokens);
+                    const frequencyPenalty = parseInt(configData.config.openaiapi.frequencyPenalty);
+                    const presencePenalty = parseInt(configData.config.openaiapi.presencePenalty);
                     this.botState = 'Waiting for AI';
-                    //TODO: 
-                    //add previous messages if:
-                    //-message is a reply to a bot message
-                    //-grab original prompt from old message
-                    //we should not send this along if:
-                    //the prompt is a "fresh" response
                     const completions = await this.openai.chat.completions.create({
                         messages: [
                             { role: "system", content: systemPrompt },
@@ -374,7 +368,8 @@ class Bucket extends EventEmitter {
                         this.botState = 'Processing Reply';
                         const blockedWords = await getBlockedWords(configData.config.severityCategory);
                         //1984 module
-                        this.filteredResponse = response.replace(/<@!\d+>/g, `${this.client.user},`) //remove ping tags (<@bunchofnumbers>)
+                        this.filteredResponse = response.replace(/<@!\d+>/g, ``) //remove ping tags (<@bunchofnumbers>)
+                        this.filteredResponse = response.replace(`Bucket: `, ``)
                         if (configData.config.removeLinks == 1) {
                             this.filteredResponse.replace(/(https?:\/\/[^\s]+)/gi, '~~link removed~~'); //replace links with link removed
                         }
