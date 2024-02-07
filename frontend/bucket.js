@@ -358,7 +358,7 @@ class Bucket extends EventEmitter {
                     this.userMessageContent = this.originalMessage;
                     let logData = `${this.originalMessage}`;
                     const input = this.originalMessage;
-                    this.inputTokensUsed = input.split(' ').length; // Count input tokens
+                    //this.inputTokensUsed = input.split(' ').length; // Count input tokens
                     // const response = await sendChatMessage(input, sender).catch(error => {
                     //     this.emit('error', error.message);
                     //     return null;
