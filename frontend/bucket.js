@@ -200,33 +200,44 @@ class Bucket extends EventEmitter {
         }
     };
 
-    async getMessageChain(message, limit = 3) {
+    async getMessageChain(message, limit = 10) {
         let chain = [];
         let currentMessage = message;
         let count = 0;
+        
+        // Include the current message first
+        let senderDisplayName = currentMessage.member ? currentMessage.member.displayName : currentMessage.author.username;
+        chain.push({
+            role: currentMessage.author.id === this.client.user.id ? "assistant" : "user",
+            name: senderDisplayName,
+            content: currentMessage.content
+        });
     
-        while (currentMessage && currentMessage.reference && currentMessage.reference.messageId && count < limit) {
-            const referenceMessage = await currentMessage.channel.messages.fetch(currentMessage.reference.messageId);
-            if (referenceMessage) {
-                const senderDisplayName = referenceMessage.member ? referenceMessage.member.displayName : referenceMessage.author.username; // Get sender's display name or username
-                // Prepend the reference message to the chain with the sender's display name
-                chain.unshift({
-                    role: referenceMessage.author.id === this.client.user.id ? "assistant" : "user",
-                    content: `${senderDisplayName}: ${referenceMessage.content}`
+        // Now traverse the message references
+        while (currentMessage.reference && currentMessage.reference.messageId && count < limit) {
+            const referenceMessageId = currentMessage.reference.messageId;
+            currentMessage = await currentMessage.channel.messages.fetch(referenceMessageId);
+    
+            if (currentMessage) {
+                senderDisplayName = currentMessage.member ? currentMessage.member.displayName : currentMessage.author.username;
+                chain.unshift({ // Prepend to chain
+                    role: currentMessage.author.id === this.client.user.id ? "assistant" : "user",
+                    name: senderDisplayName,
+                    content: currentMessage.content
                 });
-                currentMessage = referenceMessage;
             }
             count++;
         }
     
-        // Include user's message at the end with their display name
-        const senderDisplayName = currentMessage.member ? currentMessage.member.displayName : currentMessage.author.username; // Get user's display name or username
-        chain.push({
-            role: "user",
-            content: `${senderDisplayName}: ${currentMessage.content}`
+        // Remove any duplicates that might be caused by referencing messages
+        const seen = new Set();
+        const filteredChain = chain.filter(el => {
+            const duplicate = seen.has(el.content);
+            seen.add(el.content);
+            return !duplicate;
         });
-    
-        return chain;
+
+        return filteredChain;
     }
     
     async processMessages(){
@@ -252,33 +263,34 @@ class Bucket extends EventEmitter {
                 }
             };
     
-            const sendChatMessage = async(messages) => {
+            const sendChatMessage = async (messages, sender) => {
                 try {
-                    //console.log('Getting OpenAI settings');
                     const configData = await getConfig();
-                    //console.log('Got OpenAI Settings!');
                     const systemPrompt = configData.config.openaiapi.systemPrompt;
                     const modelId = configData.config.openaiapi.modelId;
-                    const temperature = parseInt(configData.config.openaiapi.temperature);
-                    const maxTokens = parseInt(configData.config.openaiapi.maxTokens);
-                    const frequencyPenalty = parseInt(configData.config.openaiapi.frequencyPenalty);
-                    const presencePenalty = parseInt(configData.config.openaiapi.presencePenalty);
+                    // const temperature = parseInt(configData.config.openaiapi.temperature);
+                    // const maxTokens = parseInt(configData.config.openaiapi.maxTokens);
+                    // const frequencyPenalty = parseInt(configData.config.openaiapi.frequencyPenalty);
+                    // const presencePenalty = parseInt(configData.config.openaiapi.presencePenalty);
                     this.botState = 'Waiting for AI';
+            
+                    const userMessage = messages[0].content;
+                    
                     const completions = await this.openai.chat.completions.create({
                         messages: [
                             { role: "system", content: systemPrompt },
-                            ...messages // Spread the messages here
+                            ...messages
                         ],
                         model: modelId,
-                        frequency_penalty: frequencyPenalty,
-                        presence_penalty: presencePenalty,
-                        temperature: temperature,
-                        max_tokens: maxTokens
+                        frequency_penalty: parseFloat(configData.config.openaiapi.frequencyPenalty),
+                        presence_penalty: parseFloat(configData.config.openaiapi.presencePenalty),
+                        temperature: parseFloat(configData.config.openaiapi.temperature),
+                        max_tokens: parseInt(configData.config.openaiapi.maxTokens)
                     });
-    
+            
                     if (completions.choices && completions.choices.length > 0) {
                         const responseContent = completions.choices[0].message.content;
-                        //console.log('Response Content:', responseContent);
+                        // Update usage statistics
                         this.outputTokensUsed = parseInt(completions.usage.completion_tokens);
                         this.totalOutputTokensUsed += this.outputTokensUsed;
                         this.inputTokensUsed = parseInt(completions.usage.prompt_tokens);
@@ -288,7 +300,6 @@ class Bucket extends EventEmitter {
                     } else {
                         this.emit('error', `OpenAI Issue, check your settings`);
                         return '[OpenAI Error - No valid response]';
-                        
                     }
                 } catch (error) {
                     this.emit('error', error.message);
@@ -324,12 +335,133 @@ class Bucket extends EventEmitter {
             });
     
             this.client.on('messageCreate', async(message) => {
-                if (message.channelId !== this.allowedChannelId) {
-                    return; //we don't care if it's not in the channel
-                }
                 const configData = await getConfig();
+                if (message.channelId !== this.allowedChannelId) {
+                    //allow a specific user to use the bot in any channel
+                    if ((message.mentions.has(this.client.user)) && (message.author.id == configData.config.allowedUserTag)) {
+
+                        await message.channel.sendTyping();
+                        this.totalPings++;
+                        this.botState = `Activated by ${message.author.tag}`;
+                        //console.log(`Got Ping! It's from ${message.author.tag}`);
+                        
+                        const sender = message.author.displayName;
+                        
+                        
+                        this.originalMessage = message.content.replace(/<@!\d+>/g, '').replace(`<@${this.client.user.id}>`, '').trim(); //dont send the ping to the ai
+                        //this.originalMessage = sender + ": " + this.originalMessage;
+                        const isReply = message.reference && message.reference.messageId;
+                        let messagesArray;
+                        if (isReply) {
+                            // If the message is a reply, get the message chain
+                            messagesArray = await this.getMessageChain(message);
+                            // Update userMessageContent based on the original message of the reply
+                            this.userMessageContent = messagesArray[0].content;
+                        } else {
+                            // If it's not a reply, just use the current message
+                            messagesArray = [{ role: "user", name: `${sender}`, content: `${message.content}` }];
+                            // Update userMessageContent based on the current message
+                            this.userMessageContent = `${sender}: ${message.content}`;
+                        }
+                        // Call sendChatMessage with the constructed messages array
+                        const response = await sendChatMessage(messagesArray, sender).catch(error => {
+                            this.emit('error', error.message);
+                            return null;
+                        });
+                        //this.userMessageContent = this.originalMessage;
+                        let logData = `${this.originalMessage}`;
+                        const input = this.originalMessage;
+                        //this.inputTokensUsed = input.split(' ').length; // Count input tokens
+                        // const response = await sendChatMessage(input, sender).catch(error => {
+                        //     this.emit('error', error.message);
+                        //     return null;
+                        //});
+        
+                        if (response) {
+                            this.botState = 'Processing Reply';
+                            const blockedWords = await getBlockedWords(configData.config.severityCategory);
+                            //1984 module
+                            this.filteredResponse = response.replace(/<@!\d+>/g, ``) //remove ping tags (<@bunchofnumbers>)
+                            this.filteredResponse = this.filteredResponse.replace(`Bucket: `, ``)
+                            if (configData.config.removeLinks == 1) {
+                                this.filteredResponse = this.filteredResponse.replace(/(https?:\/\/[^\s]+)/gi, '~~link removed~~'); //replace links with link removed
+                            }
+                            if (configData.config.removePings == 1) {
+                                this.filteredResponse = this.filteredResponse.replace(/@/g, '@\u200B'); //place invisible space between @ and words so bot can't ping
+                            }
+                            //slur filtering
+                            blockedWords.forEach(word => {
+                                const regex = new RegExp(`\\b${word.word}\\b|${word.word}(?=[\\W]|$)`, 'gi');
+                                if (this.filteredResponse.match(regex)) {
+                                    this.blockedWordsCount++; // Increment blocked words counter for each match found
+                                }
+                                this.filteredResponse = this.filteredResponse.replace(regex, 'nt'); //temporary, seems we have something tripping up the filter, especially on words ending in "nt", like "want"
+                            });
+        
+                            //ok time to find some emojis
+                            const emojiRegex = /:[a-zA-Z0-9_]+:/g;
+                            const matchedEmojis = this.filteredResponse.match(emojiRegex);
+                            //if we found some, we need to do some work to let the bot send them
+                            if (matchedEmojis) {
+                                matchedEmojis.forEach(match => {
+                                    const emojiName = match.split(':')[1]; // remove the colons, discord.js doesn't want them
+                                    const emoji = this.client.emojis.cache.find(emoji => emoji.name === emojiName); //then just search for the emote
+                                    //this should reset each message, but we'll find out if it doesnt.
+                                    if (emoji) {
+                                        // If the emoji is found, replace the matched string with the actual emoji
+                                        this.filteredResponse = this.filteredResponse.replace(match, emoji.toString());
+                                    }
+                                    // we do not care if the emote is not found (its funnier), so we don't handle this case.
+                                });
+                            }
     
-                if (message.mentions.has(this.client.user)) {
+                            //log here
+                            previousMessage = this.filteredResponse;
+                            try {
+                                this.botState = 'Sending Message';
+                                
+                                await message.reply({
+                                    content: this.filteredResponse,
+                                    allowedMentions: { repliedUser: false }
+                                });
+                                this.botState = 'Sent Message';
+                                
+                            } catch (error) {
+                                this.emit('error', error.message);
+                            }
+                        } else {
+                            this.emit('error', 'Generic Error');
+                        }
+                        this.botState = 'Logging Data';
+                        logData += `\nInput Tokens Used: ${this.inputTokensUsed}`; // Append input tokens used to log data
+                        logData += `\nOutput Tokens Used: ${this.outputTokensUsed}`; // Append output tokens used to log data
+                        logData += `\nTotal Tokens Used: ${this.totalTokensUsed} - Total Input:${this.totalInputTokensUsed} - Total Output:${this.totalOutputTokensUsed}`; // Append total tokens used to log data
+                        logData += '\n--';
+                        logData += `\nPre-Filter: ${response}`;
+                        logData += '\n--';
+                        logData += `\nFiltered: ${this.filteredResponse}`;
+                        logData += '\n------------------------------------';
+                        await this.logToFile(logData); // Write log data to file
+                        let messageData = {
+                            sender: sender,
+                            originalMessage: this.originalMessage,
+                            preFilteredMessage: response,
+                            filteredMessage: this.filteredResponse,
+                            inputTokensUsed: this.inputTokensUsed,
+                            outputTokensUsed: this.outputTokensUsed,
+                            totalTokensUsed: this.totalTokensUsed,
+                            totalInputTokensUsed: this.totalInputTokensUsed,
+                            totalOutputTokensUsed: this.totalOutputTokensUsed
+                        };
+                        
+                        this.addRecentMessage(messageData);
+                        this.botState = 'Idle';
+                        
+        
+        
+                    }
+                }
+                else if (message.mentions.has(this.client.user)) {
 
                     await message.channel.sendTyping();
                     this.totalPings++;
