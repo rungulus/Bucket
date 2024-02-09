@@ -207,6 +207,7 @@ class Bucket extends EventEmitter {
         
         // Include the current message first
         let senderDisplayName = currentMessage.member ? currentMessage.member.displayName : currentMessage.author.username;
+        senderDisplayName = senderDisplayName.replace(/[^a-zA-Z0-9_-]/g, '');
         chain.push({
             role: currentMessage.author.id === this.client.user.id ? "assistant" : "user",
             name: senderDisplayName,
