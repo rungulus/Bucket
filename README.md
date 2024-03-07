@@ -82,11 +82,9 @@ Training will also take a while, especially if you've given it a lot of data. Fo
 - removeLinks: can be 0 or 1, 1 to remove links, 0 to allow them
 <hr>
 
-2. Open a terminal/command prompt in the `bot` folder, then run `npm install` to grab all the dependencies
+2. Open a terminal/command prompt in the `frontend` folder, then run `npm install` to grab all the dependencies
   
-3. Once that's done, run `npm install`, then `npm start` to run the bot
-
-After first launch, you will just have to run `npm start` to run the bot from now on
+3. Once that's done, run `npm start` to start the bot!
 
 Bucket will log responses, and who triggered the bot in the `/bot/logs/` folder. 
 
