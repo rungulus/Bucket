@@ -46,7 +46,7 @@ Training will also take a while, especially if you've given it a lot of data. Fo
 
 ### Bucket will want to say slurs after a while. There's a filter in place which should block most if not all of them, and a well crafted system prompt will prevent some as well. We will need a better solution for "ignoring" them from OpenAI's data.
 
-1. Rename `config.sample.json` to `config.json`, and get ready to enter a lot of settings:
+1. Rename `frontend/config.sample.json` to `config.json`, and get ready to enter a lot of settings:
 
 - discordToken: your discord api key you got from the developer's portal
 - allowedChannelId: the channel you want the bot to look at for pings (can be a thread)
@@ -72,6 +72,8 @@ Training will also take a while, especially if you've given it a lot of data. Fo
   
   - systemPrompt: your system prompt that the ai will use
 
+  - allowedUserTag: a discord user id for a user who can use the bot in any channel
+
 > **A note on system prompts**
 >
 > While you're in `config.json`, you need to add a system prompt. This sets the guidelines and "boundaries" that the AI *mostly* follows. You can use the same system prompt that was used in `jsoncleaner.py`, but now would be the best time to mess around and see what gives you the best results. 
@@ -82,18 +84,11 @@ Training will also take a while, especially if you've given it a lot of data. Fo
 
 2. Open a terminal/command prompt in the `bot` folder, then run `npm install` to grab all the dependencies
   
-3. Once that's done, run `node bucket2.mjs` or just `node .` to start the bot
+3. Once that's done, run `npm install`, then `npm start` to run the bot
+
+After first launch, you will just have to run `npm start` to run the bot from now on
 
 Bucket will log responses, and who triggered the bot in the `/bot/logs/` folder. 
-
-## Frontend
-I'm working on a better frontend for Bucket. If you'd like to test it, go ahead and 
-- copy config.json from `bot` to `frontend`
-- open cmd/terminal in the `frontend` folder
-- run `npm install`
-- once that's done, run `npm start`
-
-Bucket's frontend is experimental, and not finished. Please let me know if there's something I should add to it.
 
 ## Contributing
 Feel Free! If you want to change something just open a PR.

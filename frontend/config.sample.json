@@ -14,5 +14,6 @@
   },
   "severityCategory": 2.2,
   "removePings": 1,
-  "removeLinks": 0
+  "removeLinks": 0,
+  "allowedUserTag": 0
 }
