@@ -16,6 +16,9 @@ You will need:
 - (at least) 5 dollars
 
 ## Step 1 - Prep
+
+**You should probably get consent before doing all this!**
+
   1. To get started, you'll need chat data. Use DiscordChatExporter: https://github.com/Tyrrrz/DiscordChatExporter
 
   2. In DiscordChatExporter, choose the channel you want to use for the training data, make sure to download it as `json`. This will probably take a while.
