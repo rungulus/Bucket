@@ -14,6 +14,7 @@ You will need:
 - Python
 - Node.JS
 - (at least) 5 dollars
+- consent
 
 ## Step 1 - Prep
 
@@ -47,7 +48,7 @@ Training will also take a while, especially if you've given it a lot of data. Fo
 
 ## Step 3 - Releasing it into the wild (Discord)
 
-### Bucket will want to say slurs after a while. There's a filter in place which should block most if not all of them, and a well crafted system prompt will prevent some as well. We will need a better solution for "ignoring" them from OpenAI's data.
+### Your AI Model will want to say slurs after a while, no matter how much you train it. There's a filter in place which should block most if not all of them, and a well crafted system prompt will prevent them as well. We will need a better solution for "ignoring" them from OpenAI's data in the future, though.
 
 1. Rename `frontend/config.sample.json` to `config.json`, and get ready to enter a lot of settings:
 
@@ -58,29 +59,29 @@ Training will also take a while, especially if you've given it a lot of data. Fo
 - openaiapi section:
   - apiKey: your OpenAI api key
   - modelId: your fine tuned model id
-  - maxTokens: how many tokens your bot can use per response
-    - default: 100
+
 <hr>
 
   > you should leave these settings as is, but here is what these do
+  - maxTokens: how many tokens your bot can use per response
+    - default: 256
   - temperature: how "random" you want the bot to be, can be 0-2. lower is less "random"
-    - default: 0.6
+    - default: 0.9
   - presencePenalty: how "on topic" the bot should be, can be 0-2. lower is more "on topic"
-    - default: 0.6
+    - default: 0
   - frequencyPenalty: how "repetitive" the bot should be, can be 0-2. lower is more "repetitive"
-    - default: 1
+    - default: 0
   - severityCategory: what "level" of slurs and bad words should we filter, can be 0-3.
-    - default: 2.2
+    - default: 2.6
   <hr>
   
   - systemPrompt: your system prompt that the ai will use
-
-  - allowedUserTag: a discord user id for a user who can use the bot in any channel
 
 > **A note on system prompts**
 >
 > While you're in `config.json`, you need to add a system prompt. This sets the guidelines and "boundaries" that the AI *mostly* follows. You can use the same system prompt that was used in `jsoncleaner.py`, but now would be the best time to mess around and see what gives you the best results. 
 
+- allowedUserTag: a discord user id for a user who can use the bot in any channel
 - removePings: can be 0 or 1, 1 to remove pings, 0 to allow them
 - removeLinks: can be 0 or 1, 1 to remove links, 0 to allow them
 <hr>
