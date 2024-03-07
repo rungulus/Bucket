@@ -90,7 +90,7 @@ Training will also take a while, especially if you've given it a lot of data. Fo
   
 3. Once that's done, run `npm start` to start the bot!
 
-Bucket will log responses, and who triggered the bot in the `/bot/logs/` folder. 
+Bucket will log responses, and who triggered the bot in the `/frontend/logs/` folder. 
 
 ## Contributing
 Feel Free! If you want to change something just open a PR.
