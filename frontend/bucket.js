@@ -361,7 +361,8 @@ class Bucket extends EventEmitter {
                     this.botState = `Activated by ${message.author.tag}`;
                     console.log(`Got Ping! It's from ${message.author.tag}`);
                     
-                    const sender = message.author.username;
+                    const sender = message.author.username.replace(/[^a-zA-Z0-9_-]/g, '');;
+                    
                     
                     
                     this.originalMessage = message.content.replace(/<@!\d+>/g, '').replace(`<@${this.client.user.id}>`, '').trim(); //dont send the ping to the ai
