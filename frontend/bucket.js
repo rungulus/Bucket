@@ -231,10 +231,10 @@ class Bucket extends EventEmitter {
             if (currentMessage) {
                 // Make sure to use `username` from `member.user` or `author`
                 senderDisplayName = currentMessage.member ? currentMessage.member.user.username : currentMessage.author.username;
-                console.log('presanitized username:' + senderDisplayName);
+                //console.log('presanitized username:' + senderDisplayName);
                 // Sanitize the username and truncate if necessary
                 senderDisplayName = senderDisplayName.replace(/[^a-zA-Z0-9_-]/g, '');
-                console.log('sanitized username:' + senderDisplayName);
+                //console.log('sanitized username:' + senderDisplayName);
                 if (senderDisplayName.length > 64) {
                     senderDisplayName = senderDisplayName.substring(0, 64);
                 }
@@ -355,13 +355,13 @@ class Bucket extends EventEmitter {
             this.client.on('messageCreate', async(message) => {
                 const configData = await getConfig();
                 if (message.channelId == this.allowedChannelId && message.mentions.has(this.client.user)) {
-                    console.log('got message in channel');
+                    //console.log('got message in channel');
                     await message.channel.sendTyping();
                     this.totalPings++;
                     this.botState = `Activated by ${message.author.tag}`;
-                    console.log(`Got Ping! It's from ${message.author.tag}`);
+                    //console.log(`Got Ping! It's from ${message.author.tag}`);
                     
-                    const sender = message.author.username.replace(/[^a-zA-Z0-9_-]/g, '');;
+                    const sender = message.author.displayName.replace(/[^a-zA-Z0-9_-]/g, '');;
                     
                     
                     
@@ -373,13 +373,13 @@ class Bucket extends EventEmitter {
                         // If the message is a reply, get the message chain
                         messagesArray = await this.getMessageChain(message);
 
-                        console.log('examining chain, this is a reply:')
-                        console.log(messagesArray);
+                        //console.log('message is a reply')
+                        //console.log(messagesArray);
                     } else {
                         // If it's not a reply, just use the current message
                         messagesArray = [{ role: "user", name: `${sender}`, content: `${this.originalMessage}` }];
-                        console.log('examining message, this is not a reply:')
-                        console.log(messagesArray);
+                        //console.log('message is not a reply')
+                        //console.log(messagesArray);
                     }
                     // Call sendChatMessage with the constructed messages array
                     const response = await sendChatMessage(messagesArray, sender).catch(error => {
