@@ -68,9 +68,9 @@ Training will also take a while, especially if you've given it a lot of data. Fo
   - temperature: how "random" you want the bot to be, can be 0-2. lower is less "random"
     - default: 0.9
   - presencePenalty: how "on topic" the bot should be, can be 0-2. lower is more "on topic"
-    - default: 0
+    - default: 0.3
   - frequencyPenalty: how "repetitive" the bot should be, can be 0-2. lower is more "repetitive"
-    - default: 0
+    - default: 0.3
   - severityCategory: what "level" of slurs and bad words should we filter, can be 0-3.
     - default: 2.6
   <hr>
