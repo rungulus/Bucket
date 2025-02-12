@@ -1,112 +1,71 @@
-const { OpenAI } = require("openai");
-const fs = require("fs");
+const OpenAI = require('openai');
+const fs = require('fs');
+const config = require('./config.json');
 
-// Load config.json
-const config = JSON.parse(fs.readFileSync("config.json", "utf8"));
 const openai = new OpenAI({ apiKey: config.openaiApiKey });
 
-/**
- * Sends a message to OpenAI's API using the fine-tuned model and returns the response.
- * @param {Object} userData - The structured user data from bot.js.
- * @param {Object} message - The current message being processed (if any).
- * @returns {Promise<string>} - The AI-generated response.
- */
-async function getAIResponse(userData, message) {
-    try {
-        const prompt = await generatePrompt(userData, message);
-
-        const response = await openai.chat.completions.create({
-            model: config.fineTunedModel,  // Always use the fine-tuned model
-            messages: [{ role: "system", content: config.aiSettings.system_prompt }, ...prompt],
-            temperature: config.aiSettings.temperature,
-            top_p: config.aiSettings.top_p,
-            frequency_penalty: config.aiSettings.frequency_penalty,
-            presence_penalty: config.aiSettings.presence_penalty
-        });
-
-        return response.choices[0]?.message?.content || "I couldn't generate a response.";
-    } catch (error) {
-        console.error("OpenAI API Error:", error);
-        return "There was an error processing your request.";
+async function getAIResponse(messageData, message) {
+    let messages = [];
+    
+    // Add rich presence as system message
+    if (messageData.richPresence && messageData.richPresence.length > 0) {
+        const presence = messageData.richPresence[0];
+        let presenceMessage = '';
+        if (presence.name === 'Spotify' && presence.details) {
+            presenceMessage = `User is listening to ${presence.details}`;
+        } else if (presence.type === 0 && presence.name) {
+            presenceMessage = `User is playing ${presence.name}`;
+        }
+        if (presenceMessage) {
+            messages.push({ role: 'system', content: presenceMessage });
+        }
     }
-}
-
-async function generatePrompt(userData, message, limit = 10) {
-    const conversationHistory = [];
-
-    // Add system message for rich presence if exists
-    if (userData.richPresence && userData.richPresence.length > 0) {
-        userData.richPresence.forEach(richPresence => {
-            conversationHistory.push({
-                role: 'system',
-                content: `User is currently active on ${richPresence.name} - ${richPresence.details}`
-            });
-        });
-    }
-
-    // Process the reply chain if it exists
-    if (userData.replyChain && userData.replyChain.length > 0) {
-        let chain = await getMessageChain(userData.replyChain, limit);  // Pass userData.replyChain instead of message
-        conversationHistory.push(...chain);
+    
+    // Add user message
+    if (messageData.replyChain.length > 0) {
+        messages.push(...messageData.replyChain);
     } else {
-        // Add the current message as a user message if there's no reply chain
-        const senderDisplayName = userData.nickname || 'unknown'; // Fallback to 'unknown' if no nickname
-        const content = message ? message.content : "Initial message"; // If there's no message, use a default message
-
-        // Ensure the message content is passed correctly (use the message content from the caller)
-        conversationHistory.push({
-            role: 'user',
-            name: senderDisplayName,
-            content: content
+        messages.push({ role: 'user', name: messageData.nickname.replace(/[^a-zA-Z0-9_-]/g, ''), content: messageData.content || 'No content provided' });
+    }
+    
+    // Process images
+    if (messageData.imageUrl) {
+        try {
+            const imageDescription = await describeImage(messageData.imageUrl);
+            messages.push({ role: 'system', content: `Image description: ${imageDescription}` });
+        } catch (error) {
+            console.error('Error processing image:', error);
+        }
+    }
+    
+    // Call OpenAI API
+    try {
+        const response = await openai.chat.completions.create({
+            model: config.fineTunedModel,
+            messages,
+            temperature: config.temperature,
+            frequency_penalty: config.frequencyPenalty,
+            presence_penalty: config.presencePenalty
         });
+        return response.choices[0].message.content;
+    } catch (error) {
+        console.error('Error getting AI response:', error);
+        return 'Error getting AI response';
     }
-
-    console.log("Prepared message history:", conversationHistory);
-    return conversationHistory;
 }
 
-async function getMessageChain(replyChain, limit = 10) {
-    let chain = [];
-    let count = 0;
-
-    // Loop through the reply chain and format messages
-    for (let i = 0; i < replyChain.length && count < limit; i++) {
-        const currentMessage = replyChain[i];
-
-        // Ensure we always have a valid 'author'
-        let senderDisplayName = currentMessage.author || 'unknown';  // Ensure author is not undefined
-        senderDisplayName = sanitizeUsername(senderDisplayName);
-        
-        // Add message to the chain
-        chain.push({
-            role: currentMessage.author === this.client.user.id ? "assistant" : "user",  // Check for bot's ID
-            name: senderDisplayName,
-            content: currentMessage.content || 'No content available'
+// Process image
+async function analyzeImage(imageUrl) {
+    // Use OpenAI image-to-text API (or similar) to analyze images
+    try {
+        const description = await openai.images.analyze({
+            url: imageUrl
         });
-        count++;
+        return description;
+    } catch (error) {
+        console.error('Error analyzing image:', error);
+        return 'Could not analyze the image.';
     }
-
-    // Reverse the chain to ensure oldest messages come first
-    const reversedChain = chain.reverse();  // Reverse the array to put oldest messages at the top
-
-    // Remove duplicates based on content
-    const seen = new Set();
-    const filteredChain = reversedChain.filter(el => {
-        const duplicate = seen.has(el.content);
-        seen.add(el.content);
-        return !duplicate;
-    });
-
-    return filteredChain;
 }
 
-// Helper function to sanitize the username (same as in your example)
-function sanitizeUsername(username) {
-    let sanitizedUsername = username.replace(/[^a-zA-Z0-9_-]/g, '');
-    if (sanitizedUsername.length > 64) {
-        sanitizedUsername = sanitizedUsername.substring(0, 64);
-    }
-    return sanitizedUsername;
-}
-
-module.exports = { getAIResponse, generatePrompt, getMessageChain };
+module.exports = { getAIResponse, analyzeImage };

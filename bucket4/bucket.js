@@ -77,11 +77,22 @@ client.on("messageCreate", async (message) => {
         }));
 
         const member = await message.guild.members.fetch(message.author.id);
-        const richPresence = member.presence?.activities.map(activity => ({
-            name: activity.name,
-            type: activity.type,
-            details: activity.details || 'N/A'
-        })) || [];
+        const richPresence = member.presence?.activities.map(activity => {
+            if (activity.type === 2) {  // Music activity
+                const songName = activity.details || 'Unknown song';
+                const artist = activity.state || 'Unknown artist';
+                return {
+                    role: 'user',
+                    name: 'Rich Presence',
+                    content: `User is listening to "${songName}" by ${artist}`,
+                };
+            }
+            return {
+                role: 'user',
+                name: 'Rich Presence',
+                content: `User is engaged in ${activity.name} (${activity.details || 'N/A'})`,
+            };
+        }) || [];
 
         const profilePicture = message.author.displayAvatarURL({ dynamic: true, size: 256 });
 
@@ -110,27 +121,39 @@ client.on("messageCreate", async (message) => {
         // Prepare the message history for OpenAI API
         const messages = [];
 
+        // Add the system messages (rich presence info)
+        richPresence.forEach(presence => {
+            messages.push(presence); // Include the system message directly
+        });
+
         // Add the user's message
         messages.push({
             role: 'user',
-            name: sanitizedNickname,  // Make sure we send the nickname in 'name'
-            content: message.content,
+            name: sanitizedNickname,
+            content: message.content || 'No content provided', // Ensure content is valid
         });
 
-        // If there are reply chains, include them as well
+        // Add any reply chains from previous messages
         replyChain.forEach(reply => {
             messages.unshift({
                 role: 'user',
                 name: reply.author,
-                content: reply.content,
+                content: reply.content || 'No content provided', // Ensure content is valid
             });
+        });
+
+        // Ensure the bot's message is tagged as 'assistant' and get the bot's name dynamically
+        messages.push({
+            role: 'assistant',
+            name: client.user.username, // Dynamically get the bot's name
+            content: 'There was an error processing your request.' // default or placeholder message
         });
 
         // Log the prepared message history
         console.log("Prepared message history: ", JSON.stringify(messages, null, 2));
 
         // Get AI response
-        const aiResponse = await getAIResponse(userData, messages); // Pass message history here
+        const aiResponse = await getAIResponse(userData, messages);
 
         // Log AI's response for debugging
         console.log("AI's response: ", aiResponse);
