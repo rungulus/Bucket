@@ -48,7 +48,7 @@ Training will also take a while, especially if you've given it a lot of data. Fo
 
 ## Step 3 - Releasing it into the wild (Discord)
 
-### Your AI Model will want to say slurs after a while, no matter how much you train it. There's a filter in place which should block most if not all of them, and a well crafted system prompt will prevent them as well. We will need a better solution for "ignoring" them from OpenAI's data in the future, though.
+> **Your AI Model will want to say slurs after a while, no matter how much you train it. There's a filter in place which should block most if not all of them, and a well crafted system prompt will prevent them as well. We will need a better solution for "ignoring" them from OpenAI's data in the future, though.**
 
 1. Rename `frontend/config.sample.json` to `config.json`, and get ready to enter a lot of settings:
 
