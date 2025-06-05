@@ -1,19 +1,28 @@
 {
-  "discordToken": "your discord bot token here",
-  "allowedChannelId": "channel/thread id for bot",
-  "trainEmoji": "🔥",
-  "reactionCount": 3,
-  "openaiapi": {
-    "apiKey": "your openai api key here",
-    "modelId": "your fine tuned model id",
-    "maxTokens": 256,
-    "temperature": 0.9,
-    "presencePenalty": 0.3,
-    "frequencyPenalty": 0.3,
-    "systemPrompt": "your system prompt here"
-  },
-  "severityCategory": 2.8,
-  "removePings": 1,
-  "removeLinks": 0,
-  "allowedUserTag": 0
+    "discordToken": "YOUR_DISCORD_TOKEN",
+    "allowedChannelId": "YOUR_CHANNEL_ID",
+    "trainEmoji": "🔥",
+    "reactionCount": 3,
+    "openaiapi": {
+        "apiKey": "YOUR_OPENAI_API_KEY",
+        "modelId": "your fine tuned model id",
+        "maxTokens": 256,
+        "temperature": 0.9,
+        "presencePenalty": 0.3,
+        "frequencyPenalty": 0.3,
+        "systemPrompt": "your system prompt here"
+    },
+    "severityCategory": "high",
+    "removePings": 1,
+    "removeLinks": 1,
+    "allowedUserTag": 0,
+    "randomChannels": [{
+            "channelId": "CHANNEL_ID_1",
+            "chance": 0.1
+        },
+        {
+            "channelId": "CHANNEL_ID_2",
+            "chance": 0.05
+        }
+    ]
 }

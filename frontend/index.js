@@ -1,3 +1,5 @@
+#!/usr/bin/env node
+
 const { app, BrowserWindow, ipcMain } = require('electron');
 const Bucket = require('./bucket.js');
 
@@ -5,6 +7,8 @@ console.log('Hello, Electron!');
 const Bot = new Bucket();
 
 let mainWindow;
+let updateInterval;
+let messagesInterval;
 
 function createWindow() {
     mainWindow = new BrowserWindow({
@@ -22,13 +26,20 @@ function createWindow() {
     });
 
     mainWindow.loadFile('index.html');
-    setInterval(() => {
-        const data = Bot.emitUpdate();
-        mainWindow.webContents.send('bot-update', data);
+
+    // Set up intervals for updates
+    updateInterval = setInterval(() => {
+        if (!mainWindow.isDestroyed()) {
+            const data = Bot.emitUpdate();
+            mainWindow.webContents.send('bot-update', data);
+        }
     }, 1000);
-    setInterval(() => {
-        const recentMessages = Bot.getRecentMessages();
-        mainWindow.webContents.send('recent-messages-update', recentMessages);
+
+    messagesInterval = setInterval(() => {
+        if (!mainWindow.isDestroyed()) {
+            const recentMessages = Bot.getRecentMessages();
+            mainWindow.webContents.send('recent-messages-update', recentMessages);
+        }
     }, 1000);
 
     // setInterval(() => {
@@ -37,14 +48,24 @@ function createWindow() {
     // }, 1000);
 
     Bot.on('update', (data) => {
-        mainWindow.webContents.send('bot-update', data);
+        if (!mainWindow.isDestroyed()) {
+            mainWindow.webContents.send('bot-update', data);
+        }
     });
     Bot.on('error', (errorMessage) => {
-        mainWindow.webContents.send('error-message', errorMessage);
+        if (!mainWindow.isDestroyed()) {
+            mainWindow.webContents.send('error-message', errorMessage);
+        }
+    });
+
+    // Handle window close
+    mainWindow.on('closed', () => {
+        mainWindow = null;
     });
 }
 
-Bot.initialize().then(() => {
+// Initialize bot
+Bot.init().then(() => {
     console.log('Hi Bucket!');
 }).catch(error => {
     console.error('Error initializing bot:', error);
@@ -52,15 +73,46 @@ Bot.initialize().then(() => {
 
 app.whenReady().then(createWindow);
 
-app.on('window-all-closed', () => {
+// Handle window close
+app.on('window-all-closed', async() => {
+    // Clear intervals
+    if (updateInterval) clearInterval(updateInterval);
+    if (messagesInterval) clearInterval(messagesInterval);
+
+    // Stop the bot
+    if (Bot) {
+        try {
+            await Bot.stop();
+        } catch (error) {
+            console.error('Error stopping bot:', error);
+        }
+    }
+
+    // Quit the app
     if (process.platform !== 'darwin') {
-        if (Bot) Bot.stop();
         app.quit();
     }
 });
 
+// Handle app activation
 app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) {
         createWindow();
+    }
+});
+
+// Clean up on app quit
+app.on('before-quit', async() => {
+    // Clear intervals
+    if (updateInterval) clearInterval(updateInterval);
+    if (messagesInterval) clearInterval(messagesInterval);
+
+    // Stop the bot
+    if (Bot) {
+        try {
+            await Bot.stop();
+        } catch (error) {
+            console.error('Error stopping bot:', error);
+        }
     }
 });
