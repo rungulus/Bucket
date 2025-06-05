@@ -512,28 +512,31 @@ class Bucket extends EventEmitter {
     async getImageDescription(imageUrl) {
         try {
             console.log('Getting image description for:', imageUrl);
-            const response = await this.openai.responses.create({
+            const response = await this.openai.chat.completions.create({
                 model: "gpt-4.1-mini",
-                input: [{
+                messages: [{
                     role: "user",
                     content: [{
-                            type: "input_text",
+                            type: "text",
                             text: "Please provide a detailed description of this image. Focus on the main subject, setting, colors, and any notable details that would be important for understanding the context."
                         },
                         {
-                            type: "input_image",
-                            image_url: imageUrl
+                            type: "image_url",
+                            image_url: {
+                                url: imageUrl
+                            }
                         }
                     ]
-                }]
+                }],
+                max_tokens: 300
             });
 
-            if (!response || !response.output_text) {
+            if (!response || !response.choices || !response.choices[0] || !response.choices[0].message || !response.choices[0].message.content) {
                 throw new Error('Vision API returned an invalid response');
             }
 
-            console.log('Got image description:', response.output_text);
-            return response.output_text;
+            console.log('Got image description:', response.choices[0].message.content);
+            return response.choices[0].message.content;
         } catch (error) {
             console.error('Error getting image description:', error);
             this.emit('error', `Image analysis error: ${error.message}`);
