@@ -518,7 +518,7 @@ class Bucket extends EventEmitter {
                     role: "user",
                     content: [{
                             type: "text",
-                            text: "Please provide a detailed description of this image. Focus on the main subject, setting, colors, and any notable details that would be important for understanding the context."
+                            text: "Please provide a description of this image."
                         },
                         {
                             type: "image_url",
@@ -570,7 +570,7 @@ class Bucket extends EventEmitter {
             } else {
                 messages.push({
                     role: "user",
-                    content: "Please share your thoughts about this image."
+                    content: "Bucket look at this"
                 });
             }
 
@@ -617,15 +617,14 @@ class Bucket extends EventEmitter {
         // Check if message is in a random channel
         const randomChannel = this.randomChannels.find(ch => ch.channelId === message.channelId);
         if (randomChannel) {
-            // Convert percentage to decimal (e.g., 10% -> 0.1)
-            const chance = randomChannel.chance / 100;
+            // Use the chance value directly since it's already in decimal format
+            const chance = randomChannel.chance;
             const random = Math.random();
             const shouldRespond = random < chance;
 
             console.log('Random channel check:', {
                 channelId: message.channelId,
                 configuredChance: randomChannel.chance,
-                decimalChance: chance,
                 randomNumber: random,
                 shouldRespond
             });
