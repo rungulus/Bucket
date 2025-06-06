@@ -727,15 +727,12 @@ class Bucket extends EventEmitter {
 
             // Format messages for the API
             const formattedMessages = messageArray.map(msg => {
-                // Skip bot's own messages
-                if (msg.author.id === this.client.user.id) return null;
-
-                // Format user messages
+                // Format both user and bot messages
                 return {
-                    role: "user",
+                    role: msg.author.id === this.client.user.id ? "assistant" : "user",
                     content: msg.content
                 };
-            }).filter(msg => msg !== null); // Remove null entries
+            });
 
             console.log('Formatted message history:', formattedMessages.length, 'messages');
             return formattedMessages;
