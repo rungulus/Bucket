@@ -38,9 +38,9 @@ You will need:
 ## Step 2 - Training
 **This step will cost you at least $5**
 
-There *is* a script in the training folder, but I would just use the web ui for this: https://platform.openai.com/finetune/
+Use the OpenAI Dev Portal: https://platform.openai.com/finetune/
 
-You can only use `gpt-3.5-turbo-xxxx` models for fine tuning with the data you've generated.
+You should be able to the following base models: `gpt-3.5-turbo` - `gpt-4o`/`gpt-4o-mini` - `gpt-4.1`/`mini`/`nano`
 
 Training will also take a while, especially if you've given it a lot of data. For me training a GPT3.5 model with ~2048 lines of data will run you about $2.
 
@@ -64,7 +64,7 @@ Training will also take a while, especially if you've given it a lot of data. Fo
 
   > you should leave these settings as is, but here is what these do
   - maxTokens: how many tokens your bot can use per response
-    - default: 256
+    - default: 1024
   - temperature: how "random" you want the bot to be, can be 0-2. lower is less "random"
     - default: 0.9
   - presencePenalty: how "on topic" the bot should be, can be 0-2. lower is more "on topic"
@@ -84,13 +84,17 @@ Training will also take a while, especially if you've given it a lot of data. Fo
 - allowedUserTag: a discord user id for a user who can use the bot in any channel
 - removePings: can be 0 or 1, 1 to remove pings, 0 to allow them
 - removeLinks: can be 0 or 1, 1 to remove links, 0 to allow them
+- randomChannels
+  - name: the name of the channel (can be anything
+  - channelId: the id of the channel you want the bot in
+  - chance: the percentage chance you want the bot to reply, can be `0-1` - `10% = 0.1`
 <hr>
 
-2. Open a terminal/command prompt in the `frontend` folder, then run `npm install` to grab all the dependencies
+2. Open a terminal/command prompt in the `bot` folder, then run `npm install` to grab all the dependencies
   
 3. Once that's done, run `npm start` to start the bot!
 
-Bucket will log responses, and who triggered the bot in the `/frontend/logs/` folder. 
+Bucket will log responses, and who triggered the bot in the `/bot/logs/` folder. 
 
 ## Contributing
 Feel Free! If you want to change something just open a PR.

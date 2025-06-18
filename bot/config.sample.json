@@ -6,22 +6,24 @@
     "openaiapi": {
         "apiKey": "YOUR_OPENAI_API_KEY",
         "modelId": "your fine tuned model id",
-        "maxTokens": 256,
+        "maxTokens": 1024,
         "temperature": 0.9,
         "presencePenalty": 0.3,
         "frequencyPenalty": 0.3,
         "systemPrompt": "your system prompt here"
     },
-    "severityCategory": "high",
+    "severityCategory": 2.6,
     "removePings": 1,
     "removeLinks": 1,
     "allowedUserTag": 0,
     "randomChannels": [{
-            "channelId": "CHANNEL_ID_1",
+            "name": "general-chat",
+            "channelId": "channel-id",
             "chance": 0.1
         },
         {
-            "channelId": "CHANNEL_ID_2",
+            "name": "meme-chat",
+            "channelId": "channel-id",
             "chance": 0.05
         }
     ]
