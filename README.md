@@ -87,7 +87,7 @@ Training will also take a while, especially if you've given it a lot of data. Fo
 - randomChannels
   - name: the name of the channel (can be anything
   - channelId: the id of the channel you want the bot in
-  - chance: the percentage chance you want the bot to reply, can be `0-1` - `10% = 0.1`
+  - chance: the percentage chance you want the bot to reply, can be `0-1` - `45% = 0.45`
 <hr>
 
 2. Open a terminal/command prompt in the `bot` folder, then run `npm install` to grab all the dependencies
