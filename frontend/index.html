@@ -1,164 +1,1060 @@
-<!doctype html>
-<html lang="en" data-bs-theme="dark" class="spaceBG">
-  <head>
-        <!-- these meta tags cannot be nested in a module, so they're out here -->
-        <meta name="viewport" content="width=device-width, initial-scale=1">
-        <title>Bucket v2.5</title>
-        
-        <link rel="stylesheet" href="css/bootstrap.min.css">
-        <link rel="stylesheet" href="css/custom.css">
-        <link rel="preload" href="css/backdroponly.css" as="style" onload="this.onload=null;this.rel='stylesheet'">
-        <style>
-            ::-webkit-scrollbar {
-                display: none;
-            }
-            .noselect {
-                user-select: none;
-            }
-            html {
-                max-width: 85%;
-            }
-        </style>
-    </head>
-    <body>
-        <div class="rounded-top">
-            <div class="container-fluid z-n1 position-absolute">
-                <div class="container">
-                    <pagelogo>
-                        <!-- <div class="container">
-                            <div class="container alert frostedglass">
-                                <p class="text-center mb-n"><span class="runguszone siteText noselect">Bucket</p>
-                                <p class="text-center fs-5"><span class="badge bg-primary-subtle noselect">version 2.5</span></p>
-                            </div>
-                        </div> -->
-                    </pagelogo>
-                    <helloarea>
-                        <div class="row">
-                            <div class="col-10">
-                                <div class="container alert frostedglass noselect mt-3">
-                                    <p class="text-center mb-n"><span class="runguszone siteText noselect">Bucket</p>
-                                    
-                                </div>
-                            </div>
-                            <div class="col-2">
-                                <div class="container alert frostedglass noselect mt-3">
-                                    <img src="css/bucket.logo.png" height="50" class="mx-auto d-block">
-                                    <p class="text-center fs-4 mb-n"><span class="badge bg-primary-subtle noselect">version 3.0</span></p>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                        <div class="row">
-                            <div class="col-5">
-                                <div class="container alert frostedglass noselect">
-                                    <div id="botInfo">
-                                        <p class="runguszone text-center fs-3 mb-n">Bot Info</p>
-                                        <hr class="m-0">
-                                        <p class="text-center fs-4 lead mb-n">
-                                            <span class="runguszone">Bot State: </span><span class="badge bg-primary"><span id="botState"><span class="spinner-border spinner-border-sm" role="status"></span></span></span>
-                                            <br>
-                                            <span class="runguszone">Connected As: </span><span class="badge bg-secondary-subtle"><span id="botTag"><span class="spinner-border spinner-border-sm" role="status"></span></span></span>
-                                        </p>
-                                    </div>
-                                </div>
-                                <div class="container alert frostedglass noselect">
-                                    <div id="botInfo">
-                                        <p class="runguszone text-center fs-3 mb-n">API Status</p>
-                                        <p class="text-center fs-4"><span class="badge bg-warning noselect">not implemented</span></p>
-                                        <hr class="m-0">
-                                        <p class="runguszone text-center fs-4 lead mb-n">
-                                            Discord: <span id="discordstatus"><span class="badge bg-info"><span class="spinner-border spinner-border-sm" role="status"></span></span>
-                                            <br> 
-                                            OpenAI: <span id="openaistatus"><span class="badge bg-info"><span class="spinner-border spinner-border-sm" role="status"></span></span>       
-                                        </p>
-                                    </div>
-                                </div>
-                                <div class="container alert frostedglass">
-                                    <p class="lead text-center runguszone fs-3 noselect">Latest Error:</p>
-                                    <div id="errorContainer"><p class="text-center fs-4"><span class="badge bg-success noselect">none!</span></p></div>
-                                </div>
-                            </div>
-                            <div class="col-7">
-                                <div class="container alert frostedglass noselect">
-                                    <div id="botInfo">
-                                            <p class="runguszone text-center fs-3 lead mb-n">
-                                                Total Pings: <span class="badge bg-info-subtle"><span id="totalPings">0</span></span> 
-                                                <br>Blocked Words: <span id="blockedWordsCount"><span class="badge bg-success">0</span></span>
-                                                <br>Messages Saved: <span class="badge bg-success"><span id="trainingDataFromMessage">0</span></span></p>
-                                    </div>
-                                </div>
-                                <div class="container alert frostedglass">
-                                    <p class="lead text-center runguszone fs-3 noselect">Recent Messages:</p>
-                                    <div id="messagesContainer"></div>
-                                </div>
+<!DOCTYPE html>
+<html lang="en">
 
-                            </div>
-                        </div>
-                    </helloarea>
-                    
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bucket</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            color: #ffffff;
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding: 20px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            -webkit-backdrop-filter: blur(10px);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        .header-content {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 20px;
+        }
+        
+        .header-logo {
+            width: 60px;
+            height: 60px;
+            border-radius: 10px;
+        }
+        
+        .header-text {
+            text-align: left;
+        }
+        
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+        }
+        
+        .header .version {
+            font-size: 1.2rem;
+            opacity: 0.8;
+        }
+        
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .stat-card {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            padding: 20px;
+            -webkit-backdrop-filter: blur(10px);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            transition: transform 0.3s ease;
+        }
+        
+        .stat-card:hover {
+            transform: translateY(-5px);
+        }
+        
+        .stat-card h3 {
+            font-size: 1.3rem;
+            margin-bottom: 15px;
+            color: #87CEEB;
+            border-bottom: 2px solid rgba(135, 206, 235, 0.3);
+            padding-bottom: 5px;
+        }
+        
+        .stat-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+            padding: 8px 0;
+        }
+        
+        .stat-label {
+            font-weight: 500;
+            color: #E0E0E0;
+        }
+        
+        .stat-value {
+            font-weight: bold;
+            color: #87CEEB;
+            max-width: 200px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        
+        .stat-value.model-id {
+            cursor: pointer;
+            transition: color 0.3s ease;
+            position: relative;
+        }
+        
+        .stat-value.model-id:hover {
+            color: #ffffff;
+        }
+        
+        .status-indicator {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-right: 8px;
+        }
+        
+        .status-online {
+            background-color: #4CAF50;
+        }
+        
+        .status-offline {
+            background-color: #f44336;
+        }
+        
+        .status-processing {
+            background-color: #FF9800;
+        }
+        
+        .log-section {
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 20px;
+            -webkit-backdrop-filter: blur(10px);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .log-section h3 {
+            font-size: 1.3rem;
+            margin-bottom: 15px;
+            color: #87CEEB;
+        }
+        
+        .log-container {
+            max-height: 300px;
+            overflow-y: auto;
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 10px;
+            padding: 15px;
+        }
+        
+        .log-entry {
+            margin-bottom: 10px;
+            padding: 10px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 8px;
+            border-left: 4px solid #87CEEB;
+        }
+        
+        .log-entry:last-child {
+            margin-bottom: 0;
+        }
+        
+        .log-time {
+            font-size: 0.8rem;
+            color: #888;
+            margin-bottom: 5px;
+        }
+        
+        .log-message {
+            font-family: 'Courier New', monospace;
+            font-size: 0.9rem;
+        }
+        
+        .recent-responses {
+            max-height: 400px;
+            overflow-y: auto;
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 10px;
+            padding: 15px;
+        }
+        
+        .response-card {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 10px;
+            padding: 15px;
+            border-left: 4px solid #4CAF50;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-bottom: 10px;
+        }
+        
+        .response-card:last-child {
+            margin-bottom: 0;
+        }
+        
+        .response-card:hover {
+            background: rgba(255, 255, 255, 0.1);
+            transform: translateY(-2px);
+        }
+        
+        .response-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+        
+        .response-time {
+            font-size: 0.8rem;
+            color: #888;
+        }
+        
+        .response-sender {
+            font-size: 0.9rem;
+            color: #87CEEB;
+            font-weight: bold;
+        }
+        
+        .response-original {
+            font-size: 0.85rem;
+            color: #E0E0E0;
+            margin-bottom: 8px;
+            font-style: italic;
+        }
+        
+        .response-text {
+            font-style: italic;
+            line-height: 1.4;
+            color: #ffffff;
+        }
+        
+        .error-entry {
+            border-left-color: #f44336;
+            background: rgba(244, 67, 54, 0.1);
+        }
+        
+        .success-entry {
+            border-left-color: #4CAF50;
+            background: rgba(76, 175, 80, 0.1);
+        }
+        
+        .warning-entry {
+            border-left-color: #FF9800;
+            background: rgba(255, 152, 0, 0.1);
+        }
+        
+        .auto-refresh {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            padding: 10px;
+            -webkit-backdrop-filter: blur(10px);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        .refresh-toggle {
+            background: #87CEEB;
+            color: #1e3c72;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: background 0.3s ease;
+        }
+        
+        .refresh-toggle:hover {
+            background: #5F9EA0;
+        }
+        
+        .refresh-toggle.active {
+            background: #4CAF50;
+        }
+        /* Scrollbar styling */
+        
+         ::-webkit-scrollbar {
+            width: 8px;
+        }
+        
+         ::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 4px;
+        }
+        
+         ::-webkit-scrollbar-thumb {
+            background: rgba(135, 206, 235, 0.5);
+            border-radius: 4px;
+        }
+        
+         ::-webkit-scrollbar-thumb:hover {
+            background: rgba(135, 206, 235, 0.7);
+        }
+        
+        @media (max-width: 768px) {
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+            .header h1 {
+                font-size: 2rem;
+            }
+            .header-content {
+                flex-direction: column;
+                gap: 10px;
+            }
+            .header-text {
+                text-align: center;
+            }
+        }
+        
+        .model-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(5px);
+            -webkit-backdrop-filter: blur(5px);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+        
+        .model-overlay-content {
+            background: rgba(30, 60, 114, 0.95);
+            border: 2px solid #87CEEB;
+            border-radius: 15px;
+            padding: 30px;
+            text-align: center;
+            max-width: 80%;
+            word-break: break-all;
+        }
+        
+        .model-overlay-title {
+            font-size: 1.2rem;
+            margin-bottom: 15px;
+            color: #87CEEB;
+        }
+        
+        .model-overlay-text {
+            font-family: 'Courier New', monospace;
+            font-size: 1rem;
+            color: #ffffff;
+            line-height: 1.5;
+        }
+        
+        .model-overlay-close {
+            margin-top: 20px;
+            background: #87CEEB;
+            color: #1e3c72;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: background 0.3s ease;
+        }
+        
+        .model-overlay-close:hover {
+            background: #5F9EA0;
+        }
+        
+        .stat-value.editable {
+            cursor: pointer;
+            transition: all 0.3s ease;
+            padding: 2px 6px;
+            border-radius: 4px;
+        }
+        
+        .stat-value.editable:hover {
+            background: rgba(135, 206, 235, 0.2);
+            color: #ffffff;
+        }
+        
+        .stat-value.editable.editing {
+            background: rgba(135, 206, 235, 0.3);
+            color: #ffffff;
+        }
+        
+        .channels-container {
+            max-height: 300px;
+            overflow-y: auto;
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 10px;
+            padding: 15px;
+        }
+        
+        .channel-entry {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px;
+            margin-bottom: 8px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 8px;
+            border-left: 4px solid #87CEEB;
+        }
+        
+        .channel-entry:last-child {
+            margin-bottom: 0;
+        }
+        
+        .channel-info {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            flex: 1;
+        }
+        
+        .channel-name {
+            font-weight: bold;
+            color: #87CEEB;
+            min-width: 150px;
+        }
+        
+        .channel-id {
+            font-family: 'Courier New', monospace;
+            color: #E0E0E0;
+            font-size: 0.9rem;
+        }
+        
+        .channel-chance {
+            color: #4CAF50;
+            font-weight: bold;
+        }
+        
+        .channel-actions {
+            display: flex;
+            gap: 8px;
+        }
+        
+        .channel-btn {
+            background: #87CEEB;
+            color: #1e3c72;
+            border: none;
+            padding: 4px 8px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.8rem;
+            font-weight: bold;
+            transition: background 0.3s ease;
+        }
+        
+        .channel-btn:hover {
+            background: #5F9EA0;
+        }
+        
+        .channel-btn.delete {
+            background: #f44336;
+            color: white;
+        }
+        
+        .channel-btn.delete:hover {
+            background: #d32f2f;
+        }
+        
+        .add-channel-section {
+            margin-top: 15px;
+            text-align: center;
+        }
+        
+        .add-channel-btn {
+            background: #4CAF50;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: background 0.3s ease;
+        }
+        
+        .add-channel-btn:hover {
+            background: #45a049;
+        }
+        
+        .channel-input {
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid #87CEEB;
+            border-radius: 4px;
+            color: #ffffff;
+            padding: 4px 8px;
+            font-size: 0.9rem;
+            width: 120px;
+        }
+        
+        .channel-input::placeholder {
+            color: #888;
+        }
+        
+        .message-chain-content {
+            max-width: 90%;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+        
+        .message-chain-container {
+            text-align: left;
+            margin: 20px 0;
+        }
+        
+        .message-chain-item {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 10px;
+            border-left: 4px solid #87CEEB;
+        }
+        
+        .message-chain-item.system {
+            border-left-color: #FF9800;
+            background: rgba(255, 152, 0, 0.1);
+        }
+        
+        .message-chain-item.user {
+            border-left-color: #4CAF50;
+            background: rgba(76, 175, 80, 0.1);
+        }
+        
+        .message-chain-item.assistant {
+            border-left-color: #2196F3;
+            background: rgba(33, 150, 243, 0.1);
+        }
+        
+        .message-role {
+            font-weight: bold;
+            color: #87CEEB;
+            margin-bottom: 5px;
+            font-size: 0.9rem;
+        }
+        
+        .message-name {
+            color: #E0E0E0;
+            font-size: 0.8rem;
+            margin-bottom: 5px;
+        }
+        
+        .message-content {
+            color: #ffffff;
+            line-height: 1.4;
+            white-space: pre-wrap;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="header-content">
+                <img src="css/bucket.logo.png" alt="Bucket Logo" class="header-logo">
+                <div class="header-text">
+                    <h1>Bucket</h1>
+                    <div class="version">v4</div>
                 </div>
             </div>
         </div>
-    </body>
-        <script>
-            const { ipcRenderer } = require('electron');
-            ipcRenderer.on('bot-update', (event, data) => {
-                document.getElementById('totalPings').textContent = data.totalPings;
-                if (data.blockedWordsCount > 0) {
-                    document.getElementById('blockedWordsCount').innerHTML = `<span class="badge bg-danger">${data.blockedWordsCount}</span>`;
-                }
-                document.getElementById('trainingDataFromMessage').textContent = data.trainingDataFromMessage;
-                document.getElementById('botTag').innerHTML = data.botTag;
-                document.getElementById('botState').innerHTML = data.botState;
+
+        <div class="stats-grid">
+            <div class="stat-card">
+                <h3>Bot Status</h3>
+                <div class="stat-row">
+                    <span class="stat-label">State:</span>
+                    <span class="stat-value">
+                        <span class="status-indicator" id="statusIndicator"></span>
+                    <span id="botState">Initializing...</span>
+                    </span>
+                </div>
+                <div class="stat-row">
+                    <span class="stat-label">Bot Tag:</span>
+                    <span class="stat-value" id="botTag">Loading...</span>
+                </div>
+                <div class="stat-row">
+                    <span class="stat-label">Model:</span>
+                    <span class="stat-value" id="modelId" title="Click to see full model name">Loading...</span>
+                </div>
+                <div class="stat-row">
+                    <span class="stat-label">Uptime:</span>
+                    <span class="stat-value" id="uptime">00:00:00</span>
+                </div>
+                <div class="stat-row">
+                    <span class="stat-label">Last Response:</span>
+                    <span class="stat-value" id="lastResponse">Never</span>
+                </div>
+            </div>
+
+            <div class="stat-card">
+                <h3>Activity Status</h3>
+                <div class="stat-row">
+                    <span class="stat-label">Pings:</span>
+                    <span class="stat-value" id="totalPings">0</span>
+                </div>
+                <div class="stat-row">
+                    <span class="stat-label">Images Described:</span>
+                    <span class="stat-value" id="totalImagesProcessed">0</span>
+                </div>
+                <div class="stat-row">
+                    <span class="stat-label">Blocked Words:</span>
+                    <span class="stat-value" id="blockedWordsCount">0</span>
+                </div>
+                <div class="stat-row">
+                    <span class="stat-label">Total Tokens:</span>
+                    <span class="stat-value" id="totalTokensUsed">0</span>
+                </div>
+                <div class="stat-row">
+                    <span class="stat-label">Input/Output Tokens:</span>
+                    <span class="stat-value" id="inputOutputTokens">0 / 0</span>
+                </div>
+            </div>
+
+            <div class="stat-card">
+                <h3>Model Configuration</h3>
+                <div class="stat-row">
+                    <span class="stat-label">Max Tokens:</span>
+                    <span class="stat-value editable" id="maxTokens" data-config-key="openaiapi.maxTokens">Loading...</span>
+                </div>
+                <div class="stat-row">
+                    <span class="stat-label">Temperature:</span>
+                    <span class="stat-value editable" id="temperature" data-config-key="openaiapi.temperature">Loading...</span>
+                </div>
+                <div class="stat-row">
+                    <span class="stat-label">Frequency Penalty:</span>
+                    <span class="stat-value editable" id="frequencyPenalty" data-config-key="openaiapi.frequencyPenalty">Loading...</span>
+                </div>
+                <div class="stat-row">
+                    <span class="stat-label">Presence Penalty:</span>
+                    <span class="stat-value editable" id="presencePenalty" data-config-key="openaiapi.presencePenalty">Loading...</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="log-section">
+            <h3>Recent Responses</h3>
+            <div class="recent-responses" id="recentResponses">
+                <div class="response-card">
+                    <div class="response-header">
+                        <span class="response-time">No responses yet</span>
+                    </div>
+                    <div class="response-text">Waiting for bot activity...</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="log-section">
+            <h3>Random Channels</h3>
+            <div class="channels-container" id="channelsContainer">
+                <div class="channel-entry">
+                    <span class="channel-name">Loading channels...</span>
+                </div>
+            </div>
+            <div class="add-channel-section">
+                <button class="add-channel-btn" id="addChannelBtn">Add Channel</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Model ID Overlay -->
+    <div class="model-overlay" id="modelOverlay">
+        <div class="model-overlay-content">
+            <div class="model-overlay-title">Full Model ID</div>
+            <div class="model-overlay-text" id="modelOverlayText"></div>
+            <button class="model-overlay-close" onclick="closeModelOverlay()">Close</button>
+        </div>
+    </div>
+
+    <!-- Message Chain Overlay -->
+    <div class="model-overlay" id="messageChainOverlay">
+        <div class="model-overlay-content message-chain-content">
+            <div class="model-overlay-title">Message Chain</div>
+            <div class="message-chain-container" id="messageChainContainer">
+                <!-- Message chain will be populated here -->
+            </div>
+            <button class="model-overlay-close" onclick="closeMessageChainOverlay()">Close</button>
+        </div>
+    </div>
+
+    <script>
+        const {
+            ipcRenderer
+        } = require('electron');
+
+        // DOM elements
+        const statusIndicator = document.getElementById('statusIndicator');
+        const recentResponses = document.getElementById('recentResponses');
+        const modelOverlay = document.getElementById('modelOverlay');
+        const modelOverlayText = document.getElementById('modelOverlayText');
+        const messageChainOverlay = document.getElementById('messageChainOverlay');
+        const messageChainContainer = document.getElementById('messageChainContainer');
+        const channelsContainer = document.getElementById('channelsContainer');
+        const addChannelBtn = document.getElementById('addChannelBtn');
+
+        // Store recent message chains
+        let recentMessageChains = [];
+
+        // Always-on auto refresh
+        setInterval(() => {
+            ipcRenderer.send('request-update');
+        }, 2000);
+
+        // Model overlay functions
+        function showModelOverlay(fullModelId) {
+            modelOverlayText.textContent = fullModelId;
+            modelOverlay.style.display = 'flex';
+        }
+
+        function closeModelOverlay() {
+            modelOverlay.style.display = 'none';
+        }
+
+        // Message chain overlay functions
+        function showMessageChainOverlay(messageChain) {
+            messageChainContainer.innerHTML = '';
+
+            if (!messageChain || messageChain.length === 0) {
+                messageChainContainer.innerHTML = '<div class="message-chain-item"><div class="message-content">No message chain available</div></div>';
+                messageChainOverlay.style.display = 'flex';
+                return;
+            }
+
+            messageChain.forEach(message => {
+                        const messageItem = document.createElement('div');
+                        messageItem.className = `message-chain-item ${message.role}`;
+
+                        let roleText = message.role.charAt(0).toUpperCase() + message.role.slice(1);
+                        if (message.role === 'assistant') {
+                            roleText = 'Bucket';
+                        }
+
+                        messageItem.innerHTML = `
+                    <div class="message-role">${roleText}</div>
+                    ${message.name ? `<div class="message-name">${message.name}</div>` : ''}
+                    <div class="message-content">${message.content}</div>
+                `;
+                
+                messageChainContainer.appendChild(messageItem);
             });
+            
+            messageChainOverlay.style.display = 'flex';
+        }
 
-            ipcRenderer.on('status-update', (event, data) => {
-                if (data.discord != 0) {
-                    document.getElementById('discordstatus').innerHTML = `<span class="badge bg-success">checkbox</span>`;
-                }
-                if (data.openai != 0) {
-                    document.getElementById('openaistatus').innerHTML = `<span class="badge bg-success">checkbox</span>`;
-                }
-            });
+        function closeMessageChainOverlay() {
+            messageChainOverlay.style.display = 'none';
+        }
 
+        // Close overlay when clicking outside
+        modelOverlay.addEventListener('click', (e) => {
+            if (e.target === modelOverlay) {
+                closeModelOverlay();
+            }
+        });
 
-            ipcRenderer.on('recent-messages-update', (event, messages) => {
-                const messagesContainer = document.getElementById('messagesContainer');
-                messagesContainer.innerHTML = ''; // Clear existing messages
-                messages.forEach(message => {
-                    const messageDiv = document.createElement('div');
-                    messageDiv.className = 'container alert frostedglass'; // Apply CSS class for styling
+        messageChainOverlay.addEventListener('click', (e) => {
+            if (e.target === messageChainOverlay) {
+                closeMessageChainOverlay();
+            }
+        });
 
-                    // Constructing the message content
-                    messageDiv.innerHTML = `
-                        <p>${message.sender}: ${message.originalMessage}</p>
-                        <p>Pre-Filter: ${message.preFilteredMessage}</p>
-                        <p>Filtered: ${message.filteredMessage}</p>
-                        <span class="badge bg-dark-subtle noselect">Tokens: I-${message.inputTokensUsed} O-${message.outputTokensUsed} T-${message.totalTokensUsed}</span>
-                    `;
+        // Editable value functions
+        function makeEditable(element) {
+            element.addEventListener('click', function() {
+                if (this.classList.contains('editing')) return;
 
-                    // Insert the new message at the beginning of the container
-                    if (messagesContainer.firstChild) {
-                        messagesContainer.insertBefore(messageDiv, messagesContainer.firstChild);
-                    } else {
-                        messagesContainer.appendChild(messageDiv); // Use appendChild if the container is empty
+                const currentValue = this.textContent;
+                const configKey = this.dataset.configKey;
+
+                this.classList.add('editing');
+                this.innerHTML = `<input type="number" class="channel-input" value="${currentValue}" style="width: 80px;">`;
+
+                const input = this.querySelector('input');
+                input.focus();
+                input.select();
+
+                input.addEventListener('blur', function() {
+                    saveEditableValue(element, this.value, configKey);
+                });
+
+                input.addEventListener('keypress', function(e) {
+                    if (e.key === 'Enter') {
+                        saveEditableValue(element, this.value, configKey);
                     }
                 });
             });
+        }
 
-            ipcRenderer.on('error-message', (event, errorMessage) => {
-                const errorContainer = document.getElementById('errorContainer'); // Ensure this element exists
-                const errorDiv = document.createElement('div');
-                errorDiv.className = 'container alert frostedglass';
-                errorDiv.innerHTML = `<p class="lead">Error: ${errorMessage}</p>`;
+        function saveEditableValue(element, newValue, configKey) {
+            element.classList.remove('editing');
+            element.textContent = newValue;
 
-                if (errorContainer.firstChild) {
-                    errorContainer.insertBefore(errorDiv, errorContainer.firstChild);
-                } else {
-                    errorContainer.appendChild(errorDiv);
-                }
+            // Send update to main process
+            ipcRenderer.send('update-config', {
+                key: configKey,
+                value: parseFloat(newValue)
             });
-        </script>
+        }
 
-    </body>
+        // Channel management functions
+        function updateChannels(channels) {
+            channelsContainer.innerHTML = '';
+
+            if (!channels || channels.length === 0) {
+                channelsContainer.innerHTML = '<div class="channel-entry"><span class="channel-name">No random channels configured</span></div>';
+                return;
+            }
+
+            channels.forEach((channel, index) => {
+                const channelEntry = document.createElement('div');
+                channelEntry.className = 'channel-entry';
+                channelEntry.innerHTML = `
+                    <div class="channel-info">
+                        <span class="channel-name">${channel.name || 'Unnamed Channel'}</span>
+                        <span class="channel-id">${channel.channelId}</span>
+                        <span class="channel-chance">${(channel.chance * 100).toFixed(1)}%</span>
+                    </div>
+                    <div class="channel-actions">
+                        <button class="channel-btn" onclick="editChannel(${index})">Edit</button>
+                        <button class="channel-btn delete" onclick="deleteChannel(${index})">Delete</button>
+                    </div>
+                `;
+                channelsContainer.appendChild(channelEntry);
+            });
+        }
+
+        function addChannel() {
+            console.log('addChannel called');
+            const name = prompt('Enter channel name:');
+            if (!name) return;
+            
+            const channelId = prompt('Enter channel ID:');
+            if (!channelId) return;
+            
+            const chanceStr = prompt('Enter chance (0.0 to 1.0):');
+            if (!chanceStr) return;
+            
+            const chance = parseFloat(chanceStr);
+            if (isNaN(chance) || chance < 0 || chance > 1) {
+                alert('Invalid chance value. Must be between 0.0 and 1.0');
+                return;
+            }
+            
+            console.log('Sending add-channel:', { name, channelId, chance });
+            ipcRenderer.send('add-channel', { name, channelId, chance });
+        }
+
+        function editChannel(index) {
+            console.log('editChannel called with index:', index);
+            ipcRenderer.send('get-channel', index);
+        }
+
+        function deleteChannel(index) {
+            console.log('deleteChannel called with index:', index);
+            if (confirm('Are you sure you want to delete this channel?')) {
+                ipcRenderer.send('delete-channel', index);
+            }
+        }
+
+        // Make functions global immediately
+        window.addChannel = addChannel;
+        window.editChannel = editChannel;
+        window.deleteChannel = deleteChannel;
+        window.closeModelOverlay = closeModelOverlay;
+        window.closeMessageChainOverlay = closeMessageChainOverlay;
+
+        // Make editable values clickable
+        document.addEventListener('DOMContentLoaded', function() {
+            const editableElements = document.querySelectorAll('.editable');
+            editableElements.forEach(makeEditable);
+
+            // Add channel button
+            addChannelBtn.addEventListener('click', addChannel);
+        });
+
+        // Update status indicator
+        function updateStatusIndicator(state) {
+            statusIndicator.className = 'status-indicator';
+            if (state === 'Ready') {
+                statusIndicator.classList.add('status-online');
+            } else if (state === 'Processing Message' || state === 'Processing Image') {
+                statusIndicator.classList.add('status-processing');
+            } else {
+                statusIndicator.classList.add('status-offline');
+            }
+        }
+
+        // Add log entry
+        function addLogEntry(message, type = 'info') {
+            // This function is kept for compatibility but not used in the new layout
+        }
+
+        // Update recent responses
+        function updateRecentResponses(responses, messageChains = []) {
+            recentResponses.innerHTML = '';
+            
+            if (!responses || responses.length === 0) {
+                recentResponses.innerHTML = `
+                    <div class="response-card">
+                        <div class="response-header">
+                            <span class="response-time">No responses yet</span>
+                        </div>
+                        <div class="response-text">Waiting for bot activity...</div>
+                    </div>
+                `;
+                return;
+            }
+            
+            // Reverse the array to show newest messages on top
+            const reversedResponses = [...responses].reverse();
+            
+            reversedResponses.forEach((response, index) => {
+                const responseCard = document.createElement('div');
+                responseCard.className = 'response-card';
+                
+                const timestamp = new Date(response.timestamp);
+                const timeString = timestamp.toLocaleTimeString();
+                const sender = response.originalSender || 'Unknown';
+                const originalMessage = response.originalMessage || 'No original message';
+                const responseContent = response.content || response; // Handle both new and old format
+                
+                responseCard.innerHTML = `
+                    <div class="response-header">
+                        <span class="response-time">${timeString}</span>
+                        <span class="response-sender">${sender}</span>
+                    </div>
+                    <div class="response-original">"${originalMessage.length > 50 ? originalMessage.substring(0, 50) + '...' : originalMessage}"</div>
+                    <div class="response-text">"${responseContent.length > 100 ? responseContent.substring(0, 100) + '...' : responseContent}"</div>
+                `;
+                
+                // Add click handler to show message chain
+                responseCard.addEventListener('click', () => {
+                    // Use the original index for message chains
+                    const messageChain = messageChains[index];
+                    if (messageChain) {
+                        showMessageChainOverlay(messageChain);
+                    }
+                });
+                
+                recentResponses.appendChild(responseCard);
+            });
+        }
+
+        // Bot update handler
+        ipcRenderer.on('bot-update', (event, data) => {
+            // Update status
+            document.getElementById('botState').textContent = data.botState;
+            document.getElementById('botTag').textContent = data.botTag || 'Not set';
+            document.getElementById('uptime').textContent = data.uptime || '00:00:00';
+            document.getElementById('lastResponse').textContent = data.lastResponseTime ?
+                new Date(data.lastResponseTime).toLocaleTimeString() : 'Never';
+
+            // Update activity stats
+            document.getElementById('totalPings').textContent = data.totalPings || 0;
+            document.getElementById('totalImagesProcessed').textContent = data.totalImagesProcessed || 0;
+            document.getElementById('blockedWordsCount').textContent = data.blockedWordsCount || 0;
+            document.getElementById('totalTokensUsed').textContent = (data.totalTokensUsed || 0).toLocaleString();
+            document.getElementById('inputOutputTokens').textContent = `${(data.totalInputTokensUsed || 0).toLocaleString()} / ${(data.totalOutputTokensUsed || 0).toLocaleString()}`;
+
+            // Update model config with special handling for model ID
+            const modelIdElement = document.getElementById('modelId');
+            const modelId = data.modelId || 'Unknown';
+
+            // Extract last part of model ID for display
+            let displayModelId = modelId;
+            if (modelId !== 'Unknown' && modelId !== 'Loading...' && modelId.includes('::')) {
+                displayModelId = modelId.split('::').pop();
+            }
+
+            modelIdElement.textContent = displayModelId;
+            modelIdElement.title = modelId;
+            modelIdElement.className = 'stat-value model-id';
+
+            // Add click handler for model ID
+            modelIdElement.onclick = function() {
+                if (modelId !== 'Unknown' && modelId !== 'Loading...') {
+                    showModelOverlay(modelId);
+                }
+            };
+
+            document.getElementById('maxTokens').textContent = data.maxTokens || 'Unknown';
+            document.getElementById('temperature').textContent = data.temperature || 'Unknown';
+            document.getElementById('frequencyPenalty').textContent = data.frequencyPenalty || 'Unknown';
+            document.getElementById('presencePenalty').textContent = data.presencePenalty || 'Unknown';
+
+            // Update status indicator
+            updateStatusIndicator(data.botState);
+
+            // Update recent responses
+            updateRecentResponses(data.recentResponses, data.messageChains);
+
+            // Update channels
+            updateChannels(data.randomChannels);
+        });
+
+        // Error handler
+        ipcRenderer.on('error-message', (event, errorMessage) => {
+            console.error('Bot error:', errorMessage);
+        });
+
+        // Status update handler
+        ipcRenderer.on('status-update', (event, data) => {
+            console.log('Status update:', data);
+        });
+
+        // Channel edit handler
+        ipcRenderer.on('channel-data', (event, data) => {
+            const {
+                index,
+                channel
+            } = data;
+            const name = prompt('Enter channel name:', channel.name);
+            if (!name) return;
+
+            const channelId = prompt('Enter channel ID:', channel.channelId);
+            if (!channelId) return;
+
+            const chanceStr = prompt('Enter chance (0.0 to 1.0):', channel.chance);
+            if (!chanceStr) return;
+
+            const chance = parseFloat(chanceStr);
+            if (isNaN(chance) || chance < 0 || chance > 1) {
+                alert('Invalid chance value. Must be between 0.0 and 1.0');
+                return;
+            }
+
+            ipcRenderer.send('update-channel', {
+                index,
+                name,
+                channelId,
+                chance
+            });
+        });
+
+        // Request initial update
+        ipcRenderer.send('request-update');
+    </script>
+</body>
+
 </html>

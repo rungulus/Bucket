@@ -52,7 +52,7 @@ class Bucket extends EventEmitter {
         this.totalTokensUsed = 0;
         this.recentMessages = new Map();
         this.chatHistory = new Map();
-        this.maxHistoryTokens = 1000; // 25% of GPT-3.5's 4k context
+        this.maxHistoryTokens = 1024;
         this.minHistoryMessages = 3;
         this.maxHistoryMessages = 10;
         this.blockedWords = new Set();
@@ -65,6 +65,15 @@ class Bucket extends EventEmitter {
         this.userMessageContent = '';
         this.originalMessage = '';
         this.config = null;
+        this.recentResponses = [];
+        this.maxRecentResponses = 15;
+        this.recentMessageChains = [];
+        this.maxRecentMessageChains = 15;
+        this.startTime = Date.now()
+        this.totalMessagesProcessed = 0;
+        this.totalImagesProcessed = 0;
+        this.lastResponseTime = null;
+        this.uiOpen = false;
         this.client = new Discord.Client({
             intents: [
                 Discord.GatewayIntentBits.Guilds,
@@ -105,33 +114,34 @@ class Bucket extends EventEmitter {
             console.log(`Bot is ready! Logged in as ${this.client.user.tag}`);
             this.botState = 'Ready';
             this.botTag = this.client.user.tag;
+
+            // Display initial status
+            this.displayStatus();
         });
 
         this.client.on('messageCreate', async(message) => {
-            console.log('Message received:', {
-                author: message.author.tag,
-                content: message.content,
-                channelId: message.channelId,
-                isPing: message.mentions.has(this.client.user)
-            });
-
             try {
                 // Reload config before processing each message
                 await this.loadConfig();
 
-                // Ignore messages from the bot itself
+                // Ignore messages from the bot itself for response generation
                 if (message.author.id === this.client.user.id) {
-                    console.log('Ignoring bot\'s own message');
                     return;
                 }
 
                 // Check if we should respond to this message
                 const shouldRespond = this.shouldRespondToMessage(message);
-                console.log('Should respond:', shouldRespond);
 
                 if (!shouldRespond) {
-                    console.log('Not responding to message');
                     return;
+                }
+
+                // Increment message counter
+                this.totalMessagesProcessed++;
+
+                // Increment ping counter if it's a ping
+                if (message.mentions.has(this.client.user)) {
+                    this.totalPings++;
                 }
 
                 // Start typing indicator
@@ -143,7 +153,6 @@ class Bucket extends EventEmitter {
                 }, 8000); // Send typing every 8 seconds
 
                 try {
-                    console.log('Processing message...');
                     this.botState = 'Processing Message';
                     this.originalMessage = message.content;
                     this.userMessageContent = this.originalMessage;
@@ -159,8 +168,7 @@ class Bucket extends EventEmitter {
                     }
 
                     // Get message history
-                    const history = await this.getMessageHistory(message.channel);
-                    console.log('Message history loaded:', history.length, 'messages');
+                    const history = await this.getMessageHistory(message.channel, message.id);
 
                     // Process any images in the message
                     const imageAttachments = message.attachments.filter(attachment =>
@@ -168,35 +176,40 @@ class Bucket extends EventEmitter {
                     );
 
                     let response;
+                    let finalUserMessage = this.userMessageContent;
+
                     if (imageAttachments.size > 0) {
-                        console.log('Processing image...');
+                        // Increment image counter
+                        this.totalImagesProcessed++;
+
                         // Process the first image
                         const imageUrl = imageAttachments.first().url;
                         const imageDescription = await this.getImageDescription(imageUrl);
-                        console.log('Image description:', imageDescription);
+
+                        // Create the user message with image description
+                        finalUserMessage = `[Image: ${imageDescription}] ${this.userMessageContent}`;
 
                         // Add image description to message history
                         const messagesArray = [
-                            { role: "system", content: this.config.openaiapi.systemPrompt },
+                            { role: "system", name: this.botTag || "Bucket", content: this.config.openaiapi.systemPrompt },
                             ...history,
-                            { role: "user", content: `[Image: ${imageDescription}] ${this.userMessageContent}` }
+                            { role: "user", name: this.sanitizeUsername(message.member ? message.member.displayName : message.author.username), content: finalUserMessage }
                         ];
 
-                        response = await this.sendChatMessage(messagesArray, message.channel).catch(error => {
+                        response = await this.sendChatMessage(messagesArray, message.channel, finalUserMessage, this.sanitizeUsername(message.member ? message.member.displayName : message.author.username)).catch(error => {
                             console.error('Error sending chat message:', error);
                             this.emit('error', error.message);
                             return null;
                         });
                     } else {
-                        console.log('Processing text message...');
                         // Process text message with history
                         const messagesArray = [
-                            { role: "system", content: this.config.openaiapi.systemPrompt },
+                            { role: "system", name: this.botTag || "Bucket", content: this.config.openaiapi.systemPrompt },
                             ...history,
-                            { role: "user", content: this.userMessageContent }
+                            { role: "user", name: this.sanitizeUsername(message.member ? message.member.displayName : message.author.username), content: finalUserMessage }
                         ];
 
-                        response = await this.sendChatMessage(messagesArray, message.channel).catch(error => {
+                        response = await this.sendChatMessage(messagesArray, message.channel, finalUserMessage, this.sanitizeUsername(message.member ? message.member.displayName : message.author.username)).catch(error => {
                             console.error('Error sending chat message:', error);
                             this.emit('error', error.message);
                             return null;
@@ -204,12 +217,18 @@ class Bucket extends EventEmitter {
                     }
 
                     if (response) {
-                        console.log('Sending response...');
                         await message.reply({
                             content: response,
                             allowedMentions: { repliedUser: false }
                         });
-                        console.log('Response sent!');
+
+                        // Update last response time
+                        this.lastResponseTime = Date.now();
+
+                        // Display status every 10 messages
+                        if (this.totalMessagesProcessed % 10 === 0) {
+                            this.displayStatus();
+                        }
                     } else {
                         console.log('No response generated');
                     }
@@ -365,14 +384,8 @@ class Bucket extends EventEmitter {
             this.randomChannels = this.config.randomChannels || []; // Array of {channelId, chance}
             this.botState = 'Idle';
 
-            console.log('Config loaded:', {
-                modelId: this.config.openaiapi.modelId,
-                temperature: this.config.openaiapi.temperature,
-                frequencyPenalty: this.config.openaiapi.frequencyPenalty,
-                presencePenalty: this.config.openaiapi.presencePenalty,
-                maxTokens: this.config.openaiapi.maxTokens,
-                randomChannels: this.randomChannels
-            });
+            // Update max history tokens based on model
+            this.updateMaxHistoryTokens();
         } catch (error) {
             console.error('Error loading config:', error);
             throw new Error('Config not loaded');
@@ -554,7 +567,7 @@ class Bucket extends EventEmitter {
 
             // Construct the messages array with clear separation between image context and user message
             const messages = [
-                { role: "system", content: this.config.openaiapi.systemPrompt },
+                { role: "system", name: this.botTag || "Bucket", content: this.config.openaiapi.systemPrompt },
                 {
                     role: "system",
                     content: `[Image Context: ${imageDescription}]`
@@ -599,18 +612,10 @@ class Bucket extends EventEmitter {
     }
 
     shouldRespondToMessage(message) {
-        console.log('Checking if should respond to message:', {
-            channelId: message.channelId,
-            allowedChannelId: this.allowedChannelId,
-            isPing: message.mentions.has(this.client.user),
-            randomChannels: this.randomChannels
-        });
-
         // Check if message is in allowed channel
         if (message.channelId === this.allowedChannelId) {
             // In allowed channel, only respond to pings
             const shouldRespond = message.mentions.has(this.client.user);
-            console.log('Allowed channel check:', { shouldRespond });
             return shouldRespond;
         }
 
@@ -622,22 +627,96 @@ class Bucket extends EventEmitter {
             const random = Math.random();
             const shouldRespond = random < chance;
 
-            console.log('Random channel check:', {
-                channelId: message.channelId,
-                configuredChance: randomChannel.chance,
-                randomNumber: random,
-                shouldRespond
-            });
-
             return shouldRespond;
         }
 
         // Not in allowed or random channel
-        console.log('Message not in configured channels');
         return false;
     }
 
-    async sendChatMessage(messages, channel) {
+    // Helper function to check if response is copying the user message
+    isCopyingUserMessage(response, userMessage) {
+        if (!userMessage || !response) return false;
+
+        const userLower = userMessage.toLowerCase().trim();
+        const responseLower = response.toLowerCase().trim();
+
+        // Check for exact copying
+        if (responseLower === userLower) {
+            return true;
+        }
+
+        // Check if response starts with the user's message
+        if (responseLower.startsWith(userLower) && userLower.length > 10) {
+            return true;
+        }
+
+        // Check for high similarity (more than 70% word overlap)
+        const userWords = new Set(userLower.split(/\s+/));
+        const responseWords = new Set(responseLower.split(/\s+/));
+
+        const intersection = new Set([...userWords].filter(x => responseWords.has(x)));
+        const union = new Set([...userWords, ...responseWords]);
+
+        const similarity = intersection.size / union.size;
+        return similarity > 0.7;
+    }
+
+    // Helper function to check if response is too similar to recent responses
+    isSimilarToRecentResponses(response) {
+        if (this.recentResponses.length === 0) {
+            return false;
+        }
+
+        const responseLower = response.toLowerCase().trim();
+
+        for (const recentResponse of this.recentResponses) {
+            const recentLower = recentResponse.content.toLowerCase().trim();
+
+            // Check for exact matches
+            if (responseLower === recentLower) {
+                return true;
+            }
+
+            // Check for high similarity (if more than 80% of words match)
+            const responseWords = new Set(responseLower.split(/\s+/));
+            const recentWords = new Set(recentLower.split(/\s+/));
+
+            const intersection = new Set([...responseWords].filter(x => recentWords.has(x)));
+            const union = new Set([...responseWords, ...recentWords]);
+
+            const similarity = intersection.size / union.size;
+            if (similarity > 0.8) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    // Helper function to add response to recent responses
+    addToRecentResponses(response, originalMessage = null, originalSender = null) {
+        const responseData = {
+            content: response,
+            timestamp: Date.now(),
+            originalMessage: originalMessage,
+            originalSender: originalSender
+        };
+        this.recentResponses.push(responseData);
+        if (this.recentResponses.length > this.maxRecentResponses) {
+            this.recentResponses.shift();
+        }
+    }
+
+    // Helper function to add message chain to recent message chains
+    addToRecentMessageChains(messageChain) {
+        this.recentMessageChains.push(messageChain);
+        if (this.recentMessageChains.length > this.maxRecentMessageChains) {
+            this.recentMessageChains.shift();
+        }
+    }
+
+    async sendChatMessage(messages, channel, originalMessage = null, originalSender = null) {
         try {
             const response = await this.openai.chat.completions.create({
                 messages: messages,
@@ -652,18 +731,134 @@ class Bucket extends EventEmitter {
                 throw new Error('Fine-tuned model returned an invalid response');
             }
 
+            const responseContent = response.choices[0].message.content;
+
             // Check for blocked words in the response
-            if (this.containsBlockedWords(response.choices[0].message.content)) {
-                await channel.send("I apologize, but I cannot send a response containing inappropriate language.");
+            if (this.containsBlockedWords(responseContent)) {
+                this.blockedWordsCount++;
+                console.log('Blocked word detected, giving up.');
                 return;
             }
 
+            // Check if response is copying the user message
+            const lastMessage = messages[messages.length - 1];
+            const userMessage = lastMessage && lastMessage.content ? lastMessage.content : '';
+            if (this.isCopyingUserMessage(responseContent, userMessage)) {
+                console.log('Response is copying user message, regenerating...');
+                // Add instructions to be original
+                const updatedMessages = [
+                    ...messages.slice(0, -1), // Keep all messages except the last user message
+                    { role: "system", name: this.botTag || "Bucket", content: "IMPORTANT: Do not copy or repeat what the user said, say something original." },
+                    messages[messages.length - 1] // Add the last user message back
+                ];
+
+                // Try again with updated messages and higher temperature
+                const retryResponse = await this.openai.chat.completions.create({
+                    messages: updatedMessages,
+                    model: this.config.openaiapi.modelId,
+                    temperature: Math.min(parseFloat(this.config.openaiapi.temperature) + 0.3, 1.0), // Increase temperature more
+                    frequency_penalty: parseFloat(this.config.openaiapi.frequencyPenalty),
+                    presence_penalty: parseFloat(this.config.openaiapi.presencePenalty),
+                    max_tokens: parseInt(this.config.openaiapi.maxTokens)
+                });
+
+                if (retryResponse && retryResponse.choices && retryResponse.choices[0] && retryResponse.choices[0].message && retryResponse.choices[0].message.content) {
+                    const retryContent = retryResponse.choices[0].message.content;
+
+                    // Check blocked words again
+                    if (this.containsBlockedWords(retryContent)) {
+                        this.blockedWordsCount++;
+                        console.log('Blocked word detected, giving up.');
+                        return;
+                    }
+
+                    // Check copying again
+                    if (this.isCopyingUserMessage(retryContent, userMessage)) {
+                        console.log('Retry response still copying, giving up.');
+                        return;
+                    }
+
+                    // Add to recent responses and return
+                    this.addToRecentResponses(retryContent, originalMessage, originalSender);
+
+                    // Store the message chain for UI display
+                    const messageChainWithResponse = [...updatedMessages, { role: "assistant", name: this.botTag || "Bucket", content: retryContent }];
+                    this.addToRecentMessageChains(messageChainWithResponse);
+
+                    // Update token usage
+                    this.inputTokensUsed = parseInt(retryResponse.usage.prompt_tokens);
+                    this.totalInputTokensUsed += this.inputTokensUsed;
+                    this.outputTokensUsed = parseInt(retryResponse.usage.completion_tokens);
+                    this.totalOutputTokensUsed += this.outputTokensUsed;
+                    this.totalTokensUsed += parseInt(retryResponse.usage.total_tokens);
+
+                    return retryContent;
+                }
+            }
+
+            // Check if response is too similar to recent responses
+            if (this.isSimilarToRecentResponses(responseContent)) {
+                console.log('Response too similar to recent responses, regenerating...');
+                // Add a note to the system prompt to encourage variety
+                const updatedMessages = [
+                    ...messages.slice(0, -1), // Keep all messages except the last user message
+                    { role: "system", name: this.botTag || "Bucket", content: "Please provide a different response than what you've said recently. Be creative and varied in your responses." },
+                    messages[messages.length - 1] // Add the last user message back
+                ];
+
+                // Try again with updated messages
+                const retryResponse = await this.openai.chat.completions.create({
+                    messages: updatedMessages,
+                    model: this.config.openaiapi.modelId,
+                    temperature: Math.min(parseFloat(this.config.openaiapi.temperature) + 0.2, 1.0), // Increase temperature slightly
+                    frequency_penalty: parseFloat(this.config.openaiapi.frequencyPenalty),
+                    presence_penalty: parseFloat(this.config.openaiapi.presencePenalty),
+                    max_tokens: parseInt(this.config.openaiapi.maxTokens)
+                });
+
+                if (retryResponse && retryResponse.choices && retryResponse.choices[0] && retryResponse.choices[0].message && retryResponse.choices[0].message.content) {
+                    const retryContent = retryResponse.choices[0].message.content;
+
+                    // Check blocked words again
+                    if (this.containsBlockedWords(retryContent)) {
+                        this.blockedWordsCount++;
+                        console.log('Blocked word detected, giving up.');
+                        return;
+                    }
+
+                    // Add to recent responses and return
+                    this.addToRecentResponses(retryContent, originalMessage, originalSender);
+
+                    // Store the message chain for UI display
+                    const messageChainWithResponse = [...updatedMessages, { role: "assistant", name: this.botTag || "Bucket", content: retryContent }];
+                    this.addToRecentMessageChains(messageChainWithResponse);
+
+                    // Update token usage
+                    this.inputTokensUsed = parseInt(retryResponse.usage.prompt_tokens);
+                    this.totalInputTokensUsed += this.inputTokensUsed;
+                    this.outputTokensUsed = parseInt(retryResponse.usage.completion_tokens);
+                    this.totalOutputTokensUsed += this.outputTokensUsed;
+                    this.totalTokensUsed += parseInt(retryResponse.usage.total_tokens);
+
+                    return retryContent;
+                }
+            }
+
+            // Add response to recent responses
+            this.addToRecentResponses(responseContent, originalMessage, originalSender);
+
+            // Store the message chain for UI display
+            const messageChainWithResponse = [...messages, { role: "assistant", name: this.botTag || "Bucket", content: responseContent }];
+            this.addToRecentMessageChains(messageChainWithResponse);
+
             // Update token usage for fine-tuned model
+            this.inputTokensUsed = parseInt(response.usage.prompt_tokens);
+            this.totalInputTokensUsed += this.inputTokensUsed;
             this.outputTokensUsed = parseInt(response.usage.completion_tokens);
             this.totalOutputTokensUsed += this.outputTokensUsed;
             this.totalTokensUsed += parseInt(response.usage.total_tokens);
 
-            return response.choices[0].message.content;
+            return responseContent;
         } catch (error) {
             this.emit('error', `Chat error: ${error.message}`);
             throw error;
@@ -702,7 +897,20 @@ class Bucket extends EventEmitter {
             outputTokensUsed: this.outputTokensUsed,
             totalOutputTokensUsed: this.totalOutputTokensUsed,
             response: this.responseContent,
-            filteredResponse: this.filteredResponse
+            filteredResponse: this.filteredResponse,
+            uptime: this.getUptime(),
+            totalMessagesProcessed: this.totalMessagesProcessed,
+            totalImagesProcessed: this.totalImagesProcessed,
+            lastResponseTime: this.lastResponseTime,
+            recentResponses: this.recentResponses.slice(-15),
+            messageChains: this.recentMessageChains.slice(-15).reverse(), // Reverse to match UI order
+            // Model configuration data
+            modelId: this.config && this.config.openaiapi && this.config.openaiapi.modelId ? this.config.openaiapi.modelId : 'Unknown',
+            temperature: this.config && this.config.openaiapi && this.config.openaiapi.temperature ? this.config.openaiapi.temperature : 'Unknown',
+            frequencyPenalty: this.config && this.config.openaiapi && this.config.openaiapi.frequencyPenalty ? this.config.openaiapi.frequencyPenalty : 'Unknown',
+            presencePenalty: this.config && this.config.openaiapi && this.config.openaiapi.presencePenalty ? this.config.openaiapi.presencePenalty : 'Unknown',
+            maxTokens: this.config && this.config.openaiapi && this.config.openaiapi.maxTokens ? this.config.openaiapi.maxTokens : 'Unknown',
+            randomChannels: this.randomChannels || []
         };
     }
 
@@ -717,29 +925,152 @@ class Bucket extends EventEmitter {
         return this.recentMessages;
     }
 
-    async getMessageHistory(channel) {
+    // Helper function to sanitize username for API use
+    sanitizeUsername(username) {
+        if (!username) return 'User';
+
+        // Filter out special characters and limit length
+        let sanitized = username.replace(/[^a-zA-Z0-9_-]/g, '');
+        if (sanitized.length > 64) {
+            sanitized = sanitized.substring(0, 64);
+        }
+
+        // Ensure username is not empty after filtering
+        if (!sanitized || sanitized.length === 0) {
+            sanitized = 'User';
+        }
+
+        return sanitized;
+    }
+
+    async getMessageHistory(channel, currentMessageId = null) {
         try {
-            // Fetch last 10 messages from the channel
-            const messages = await channel.messages.fetch({ limit: 10 });
+            // Fetch last 15 messages from the channel (increased to get more messages after filtering)
+            const messages = await channel.messages.fetch({ limit: 15 });
 
             // Convert to array and reverse to get chronological order
             const messageArray = Array.from(messages.values()).reverse();
 
-            // Format messages for the API
-            const formattedMessages = messageArray.map(msg => {
-                // Format both user and bot messages
+            // Filter out empty messages, emoji-only messages, and the current message if provided
+            const filteredMessages = messageArray.filter(msg => {
+                // Skip the current message if it's provided
+                if (currentMessageId && msg.id === currentMessageId) {
+                    return false;
+                }
+
+                // Skip empty messages or messages that are just whitespace
+                if (!msg.content || msg.content.trim().length === 0) {
+                    return false;
+                }
+
+                // Skip messages that are just emojis or reactions
+                if (msg.content.match(/^[\u{1F600}-\u{1F64F}\u{1F300}-\u{1F5FF}\u{1F680}-\u{1F6FF}\u{1F1E0}-\u{1F1FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}]+$/u)) {
+                    return false;
+                }
+
+                return true;
+            });
+
+            // Limit to last 10 messages to prevent context overflow
+            const limitedMessages = filteredMessages.slice(-10);
+
+            // Format messages for the API with proper role assignment and usernames
+            const formattedMessages = limitedMessages.map(msg => {
+                // Get username and filter out special characters
+                let username = msg.member ? msg.member.displayName : msg.author.username;
+
+                // Filter out special characters and limit length
+                username = this.sanitizeUsername(username);
+
                 return {
                     role: msg.author.id === this.client.user.id ? "assistant" : "user",
+                    name: username,
                     content: msg.content
                 };
             });
 
-            console.log('Formatted message history:', formattedMessages.length, 'messages');
             return formattedMessages;
         } catch (error) {
             console.error('Error getting message history:', error);
             return []; // Return empty array if there's an error
         }
+    }
+
+    // Helper function to format uptime
+    getUptime() {
+        const uptime = Date.now() - this.startTime;
+        const days = Math.floor(uptime / (1000 * 60 * 60 * 24));
+        const hours = Math.floor((uptime % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+        const minutes = Math.floor((uptime % (1000 * 60 * 60)) / (1000 * 60));
+        const seconds = Math.floor((uptime % (1000 * 60)) / 1000);
+
+        if (days > 0) {
+            return `${days}d ${hours}h ${minutes}m ${seconds}s`;
+        } else if (hours > 0) {
+            return `${hours}h ${minutes}m ${seconds}s`;
+        } else if (minutes > 0) {
+            return `${minutes}m ${seconds}s`;
+        } else {
+            return `${seconds}s`;
+        }
+    }
+
+    // Helper function to get recent responses for display
+    getRecentResponsesDisplay() {
+        if (this.recentResponses.length === 0) {
+            return "None";
+        }
+
+        return this.recentResponses.slice(-3).map((response, index) => {
+            const truncated = response.content.length > 50 ? response.content.substring(0, 50) + '...' : response.content;
+            return `${index + 1}. "${truncated}"`;
+        }).join('\n    ');
+    }
+
+    // Method to set UI state
+    setUIState(isOpen) {
+        this.uiOpen = isOpen;
+    }
+
+    // Display comprehensive bot status
+    displayStatus() {
+        // Only display status if UI is not open
+        if (this.uiOpen) {
+            return;
+        }
+
+        const uptime = this.getUptime();
+        const recentResponses = this.getRecentResponsesDisplay();
+        const lastResponse = this.lastResponseTime ? new Date(this.lastResponseTime).toLocaleTimeString() : 'Never';
+
+        console.log('\n' + '='.repeat(60));
+        console.log('BUCKET BOT STATUS');
+        console.log('='.repeat(60));
+        console.log(`State: ${this.botState}`);
+        console.log(`Uptime: ${uptime}`);
+        console.log(`Bot Tag: ${this.botTag || 'Not set'}`);
+        console.log(`Model: ${this.config?.openaiapi?.modelId || 'Unknown'}`);
+        console.log(`Temperature: ${this.config?.openaiapi?.temperature || 'Unknown'}`);
+        console.log(`Frequency Penalty: ${this.config?.openaiapi?.frequencyPenalty || 'Unknown'}`);
+        console.log(`Presence Penalty: ${this.config?.openaiapi?.presencePenalty || 'Unknown'}`);
+        console.log(`Max Tokens: ${this.config?.openaiapi?.maxTokens || 'Unknown'}`);
+        console.log(`Random Channels: ${this.randomChannels?.length || 0} configured`);
+        console.log(`Total Messages Processed: ${this.totalMessagesProcessed}`);
+        console.log(`Total Images Processed: ${this.totalImagesProcessed}`);
+        console.log(`Total Pings: ${this.totalPings}`);
+        console.log(`Blocked Words Count: ${this.blockedWordsCount}`);
+        console.log(`Last Response: ${lastResponse}`);
+        console.log(`Total Tokens Used: ${this.totalTokensUsed.toLocaleString()}`);
+        console.log(`Input Tokens: ${this.totalInputTokensUsed.toLocaleString()}`);
+        console.log(`Output Tokens: ${this.totalOutputTokensUsed.toLocaleString()}`);
+        console.log(`Recent Responses:`);
+        console.log(`    ${recentResponses}`);
+        console.log('='.repeat(60) + '\n');
+    }
+
+    // Method to manually display status (can be called from external scripts)
+    showStatus() {
+        this.displayStatus();
     }
 }
 
