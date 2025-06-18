@@ -40,7 +40,7 @@ You will need:
 
 Use the OpenAI Dev Portal: https://platform.openai.com/finetune/
 
-You should be able to the following base models: `gpt-3.5-turbo` - `gpt-4o`/`gpt-4o-mini` - `gpt-4.1`/`mini`/`nano`
+You should be able to the following base models: `gpt-3.5-turbo` - `gpt-4o`/`mini` - `gpt-4.1`/`mini`/`nano`
 
 Training will also take a while, especially if you've given it a lot of data. For me training a GPT3.5 model with ~2048 lines of data will run you about $2.
 
@@ -50,7 +50,7 @@ Training will also take a while, especially if you've given it a lot of data. Fo
 
 > **Your AI Model will want to say slurs after a while, no matter how much you train it. There's a filter in place which should block most if not all of them, and a well crafted system prompt will prevent them as well. We will need a better solution for "ignoring" them from OpenAI's data in the future, though.**
 
-1. Rename `frontend/config.sample.json` to `config.json`, and get ready to enter a lot of settings:
+1. Rename `bot/config.sample.json` to `config.json`, and get ready to enter a lot of settings:
 
 - discordToken: your discord api key you got from the developer's portal
 - allowedChannelId: the channel you want the bot to look at for pings (can be a thread)
