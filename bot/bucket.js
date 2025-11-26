@@ -91,6 +91,9 @@ class Bucket extends EventEmitter {
                 Discord.Partials.Reaction
             ]
         });
+        // How old messages can be to include in history (in minutes)
+        this.historyAgeMinutes = typeof this.config.historyAgeMinutes === 'number' ? this.config.historyAgeMinutes : 15;
+        this.logHistoryFiltering = !!this.config.logHistoryFiltering;
     }
 
     async init() {
@@ -324,6 +327,11 @@ class Bucket extends EventEmitter {
             try {
                 const referencedMessage = await currentMessage.channel.messages.fetch(currentMessage.reference.messageId);
                 if (referencedMessage) {
+                    // Exclude referenced messages older than configured minutes
+                    const cutoff = Date.now() - ( (this.historyAgeMinutes || 15) * 60 * 1000 );
+                    if (referencedMessage.createdTimestamp < cutoff) {
+                        return history;
+                    }
                     // Add referenced message to history if not already present
                     const exists = history.some(msg => msg.id === referencedMessage.id);
                     if (!exists) {
@@ -487,12 +495,19 @@ class Bucket extends EventEmitter {
             content: currentMessage.content
         });
 
+        // Cutoff timestamp to avoid including old messages
+        const cutoff = Date.now() - (15 * 60 * 1000);
+
         // Now traverse the message references
         while (currentMessage.reference && currentMessage.reference.messageId && count < limit) {
             const referenceMessageId = currentMessage.reference.messageId;
             currentMessage = await currentMessage.channel.messages.fetch(referenceMessageId);
 
             if (currentMessage) {
+                // Skip adding referenced messages older than cutoff
+                if (currentMessage.createdTimestamp < cutoff) {
+                    break;
+                }
                 // Make sure to use `username` from `member.user` or `author`
                 senderDisplayName = currentMessage.member ? currentMessage.member.user.username : currentMessage.author.username;
                 //console.log('presanitized username:' + senderDisplayName);
@@ -634,7 +649,7 @@ class Bucket extends EventEmitter {
         return false;
     }
 
-    // Helper function to check if response is copying the user message
+            const cutoff = Date.now() - ( (this.historyAgeMinutes || 15) * 60 * 1000 );
     isCopyingUserMessage(response, userMessage) {
         if (!userMessage || !response) return false;
 
@@ -643,9 +658,9 @@ class Bucket extends EventEmitter {
 
         // Check for exact copying
         if (responseLower === userLower) {
-            return true;
-        }
-
+                    if (currentMessage.createdTimestamp < cutoff) {
+                        if (this.logHistoryFiltering) console.log(`[getMessageChain] referenced message ${currentMessage.id} older than ${this.historyAgeMinutes}m, stopping traversal`);
+                        break;
         // Check if response starts with the user's message
         if (responseLower.startsWith(userLower) && userLower.length > 10) {
             return true;
@@ -952,6 +967,7 @@ class Bucket extends EventEmitter {
             const messageArray = Array.from(messages.values()).reverse();
 
             // Filter out empty messages, emoji-only messages, and the current message if provided
+            const cutoff = Date.now() - (15 * 60 * 1000); // 15 minutes ago
             const filteredMessages = messageArray.filter(msg => {
                 // Skip the current message if it's provided
                 if (currentMessageId && msg.id === currentMessageId) {
@@ -965,6 +981,11 @@ class Bucket extends EventEmitter {
 
                 // Skip messages that are just emojis or reactions
                 if (msg.content.match(/^[\u{1F600}-\u{1F64F}\u{1F300}-\u{1F5FF}\u{1F680}-\u{1F6FF}\u{1F1E0}-\u{1F1FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}]+$/u)) {
+                    return false;
+                }
+
+                // Skip messages older than cutoff (15 minutes)
+                if (msg.createdTimestamp < cutoff) {
                     return false;
                 }
 
@@ -1037,7 +1058,7 @@ class Bucket extends EventEmitter {
         // Only display status if UI is not open
         if (this.uiOpen) {
             return;
-        }
+            const cutoff = Date.now() - ( (this.historyAgeMinutes || 15) * 60 * 1000 ); // minutes ago
 
         const uptime = this.getUptime();
         const recentResponses = this.getRecentResponsesDisplay();
@@ -1055,9 +1076,9 @@ class Bucket extends EventEmitter {
         console.log(`Presence Penalty: ${this.config?.openaiapi?.presencePenalty || 'Unknown'}`);
         console.log(`Max Tokens: ${this.config?.openaiapi?.maxTokens || 'Unknown'}`);
         console.log(`Random Channels: ${this.randomChannels?.length || 0} configured`);
-        console.log(`Total Messages Processed: ${this.totalMessagesProcessed}`);
-        console.log(`Total Images Processed: ${this.totalImagesProcessed}`);
-        console.log(`Total Pings: ${this.totalPings}`);
+                if (msg.createdTimestamp < cutoff) {
+                    if (this.logHistoryFiltering) console.log(`[getMessageHistory] skipping message ${msg.id} from ${msg.author.username} older than ${this.historyAgeMinutes}m`);
+                    return false;
         console.log(`Blocked Words Count: ${this.blockedWordsCount}`);
         console.log(`Last Response: ${lastResponse}`);
         console.log(`Total Tokens Used: ${this.totalTokensUsed.toLocaleString()}`);

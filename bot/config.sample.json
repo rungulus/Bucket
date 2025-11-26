@@ -12,9 +12,11 @@
         "frequencyPenalty": 0.3,
         "systemPrompt": "your system prompt here"
     },
-    "severityCategory": 2.6,
+    "severityCategory": "high",
     "removePings": 1,
     "removeLinks": 1,
+    "historyAgeMinutes": 15,
+    "logHistoryFiltering": false,
     "allowedUserTag": 0,
     "randomChannels": [{
             "name": "general-chat",
