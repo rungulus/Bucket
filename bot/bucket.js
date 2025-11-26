@@ -91,9 +91,7 @@ class Bucket extends EventEmitter {
                 Discord.Partials.Reaction
             ]
         });
-        // How old messages can be to include in history (in minutes)
-        this.historyAgeMinutes = typeof this.config.historyAgeMinutes === 'number' ? this.config.historyAgeMinutes : 15;
-        this.logHistoryFiltering = !!this.config.logHistoryFiltering;
+        // historyAgeMinutes and logHistoryFiltering are loaded from config in loadConfig
     }
 
     async init() {
@@ -390,6 +388,9 @@ class Bucket extends EventEmitter {
             this.removePings = this.config.removePings;
             this.removeLinks = this.config.removeLinks;
             this.randomChannels = this.config.randomChannels || []; // Array of {channelId, chance}
+            // How old messages can be to include in history (in minutes)
+            this.historyAgeMinutes = typeof this.config.historyAgeMinutes === 'number' ? this.config.historyAgeMinutes : 15;
+            this.logHistoryFiltering = !!this.config.logHistoryFiltering;
             this.botState = 'Idle';
 
             // Update max history tokens based on model
@@ -495,8 +496,8 @@ class Bucket extends EventEmitter {
             content: currentMessage.content
         });
 
-        // Cutoff timestamp to avoid including old messages
-        const cutoff = Date.now() - (15 * 60 * 1000);
+        // Cutoff timestamp to avoid including old messages (configurable)
+        const cutoff = Date.now() - ((this.historyAgeMinutes || 15) * 60 * 1000);
 
         // Now traverse the message references
         while (currentMessage.reference && currentMessage.reference.messageId && count < limit) {
@@ -649,7 +650,6 @@ class Bucket extends EventEmitter {
         return false;
     }
 
-            const cutoff = Date.now() - ( (this.historyAgeMinutes || 15) * 60 * 1000 );
     isCopyingUserMessage(response, userMessage) {
         if (!userMessage || !response) return false;
 
@@ -658,9 +658,9 @@ class Bucket extends EventEmitter {
 
         // Check for exact copying
         if (responseLower === userLower) {
-                    if (currentMessage.createdTimestamp < cutoff) {
-                        if (this.logHistoryFiltering) console.log(`[getMessageChain] referenced message ${currentMessage.id} older than ${this.historyAgeMinutes}m, stopping traversal`);
-                        break;
+            return true;
+        }
+
         // Check if response starts with the user's message
         if (responseLower.startsWith(userLower) && userLower.length > 10) {
             return true;
@@ -967,7 +967,7 @@ class Bucket extends EventEmitter {
             const messageArray = Array.from(messages.values()).reverse();
 
             // Filter out empty messages, emoji-only messages, and the current message if provided
-            const cutoff = Date.now() - (15 * 60 * 1000); // 15 minutes ago
+            const cutoff = Date.now() - ((this.historyAgeMinutes || 15) * 60 * 1000); // configured minutes ago
             const filteredMessages = messageArray.filter(msg => {
                 // Skip the current message if it's provided
                 if (currentMessageId && msg.id === currentMessageId) {
@@ -1058,7 +1058,7 @@ class Bucket extends EventEmitter {
         // Only display status if UI is not open
         if (this.uiOpen) {
             return;
-            const cutoff = Date.now() - ( (this.historyAgeMinutes || 15) * 60 * 1000 ); // minutes ago
+        }
 
         const uptime = this.getUptime();
         const recentResponses = this.getRecentResponsesDisplay();
@@ -1076,9 +1076,6 @@ class Bucket extends EventEmitter {
         console.log(`Presence Penalty: ${this.config?.openaiapi?.presencePenalty || 'Unknown'}`);
         console.log(`Max Tokens: ${this.config?.openaiapi?.maxTokens || 'Unknown'}`);
         console.log(`Random Channels: ${this.randomChannels?.length || 0} configured`);
-                if (msg.createdTimestamp < cutoff) {
-                    if (this.logHistoryFiltering) console.log(`[getMessageHistory] skipping message ${msg.id} from ${msg.author.username} older than ${this.historyAgeMinutes}m`);
-                    return false;
         console.log(`Blocked Words Count: ${this.blockedWordsCount}`);
         console.log(`Last Response: ${lastResponse}`);
         console.log(`Total Tokens Used: ${this.totalTokensUsed.toLocaleString()}`);
