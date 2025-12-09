@@ -406,17 +406,40 @@ class Bucket extends EventEmitter {
             // Update max history tokens based on model
             this.updateMaxHistoryTokens();
 
-            // Normalize severityCategory: allow numeric or string labels
+            // Normalize severityCategory: allow numeric strings or fuzzy labels
             if (typeof this.severityCategory !== 'number') {
-                const sc = String(this.severityCategory || '').toLowerCase();
-                const map = {
-                    'low': 1,
-                    'medium': 5,
-                    'med': 5,
-                    'high': 8,
-                    'critical': 10
-                };
-                this.severityCategory = map[sc] !== undefined ? map[sc] : 0;
+                const raw = String(this.severityCategory || '').toLowerCase().trim();
+
+                // If it's a numeric string (allow floats), parse and clamp to 0-3
+                if (/^-?\d+(?:\.\d+)?$/.test(raw)) {
+                    let n = parseFloat(raw);
+                    if (n < 0) n = 0;
+                    if (n > 3) n = 3;
+                    this.severityCategory = n;
+                } else {
+                    // Normalize: remove non-letter chars and correct common typos
+                    let sc = raw.replace(/[^a-z]/g, '');
+                    sc = sc.replace(/ctritical/g, 'critical'); // handle 'ctritical' typo
+
+                    // If both 'low' and 'critical' appear treat as medium
+                    const hasLow = sc.includes('low');
+                    const hasCritical = sc.includes('critical');
+
+                    if (hasLow && hasCritical) {
+                        this.severityCategory = 1; // medium (0..3 scale)
+                    } else if (sc.includes('critical')) {
+                        this.severityCategory = 3;
+                    } else if (sc.includes('high')) {
+                        this.severityCategory = 2;
+                    } else if (sc.includes('medium') || sc.includes('med')) {
+                        this.severityCategory = 1;
+                    } else if (sc.includes('low')) {
+                        this.severityCategory = 0;
+                    } else {
+                        // Unknown label -> default to 2.6
+                        this.severityCategory = 2.6;
+                    }
+                }
             }
         } catch (error) {
             console.error('Error loading config:', error);
@@ -609,7 +632,7 @@ class Bucket extends EventEmitter {
                 const logEntry = `Image processed (direct) | url=${imageUrl} | description=${imageDescription} | message=${userMessage}`;
                 await this.logToFile(logEntry);
             } catch (e) {
-                // ignore logging errors
+                // ignore
             }
 
             // Construct the messages array with clear separation between image context and user message
@@ -669,7 +692,6 @@ class Bucket extends EventEmitter {
         // Check if message is in a random channel
         const randomChannel = this.randomChannels.find(ch => ch.channelId === message.channelId);
         if (randomChannel) {
-            // Use the chance value directly since it's already in decimal format
             const chance = randomChannel.chance;
             const random = Math.random();
             const shouldRespond = random < chance;
@@ -1158,10 +1180,10 @@ class Bucket extends EventEmitter {
         console.log('='.repeat(60) + '\n');
     }
 
-    // Method to manually display status (can be called from external scripts)
-    showStatus() {
-        this.displayStatus();
-    }
+    // // Method to manually display status (can be called from external scripts)
+    // showStatus() {
+    //     this.displayStatus();
+    // }
 }
 
 module.exports = Bucket;
