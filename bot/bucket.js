@@ -255,6 +255,67 @@ class Bucket extends EventEmitter {
             }
         });
 
+        // Handle reactions for training data (save when enough trainEmoji reactions)
+        this.client.on('messageReactionAdd', async(reaction, user) => {
+            try {
+                // fetch partials if needed
+                if (reaction.partial) {
+                    try {
+                        await reaction.fetch();
+                    } catch (e) {
+                        console.error('Failed to fetch reaction partial:', e);
+                        return;
+                    }
+                }
+
+                // Ignore reactions from the bot itself
+                if (user.id === this.client.user.id) return;
+
+                const msg = reaction.message;
+
+                // Ensure we have config loaded
+                if (!this.config) await this.loadConfig();
+
+                const trainEmoji = this.trainEmoji;
+                const requiredCount = parseFloat(this.reactionCount) || 1;
+
+                // Match emoji by name or id
+                const emojiMatches = (reaction.emoji && (reaction.emoji.name === trainEmoji || reaction.emoji.id === trainEmoji));
+                if (!emojiMatches) return;
+
+                // If reaction count meets or exceeds threshold, save training data
+                if (reaction.count >= requiredCount) {
+                    try {
+                        // Build message chain (includes referenced messages)
+                        const chain = await this.getMessageChain(msg, 10);
+
+                        // Build user prompt from the chain (concatenate user messages)
+                        const userPrompt = chain.filter(m => m.role === 'user').map(m => `${m.name}: ${m.content}`).join('\n');
+
+                        // Attempt to get assistant response from chain
+                        const assistantEntry = [...chain].reverse().find(m => m.role === 'assistant');
+                        const aiResponse = assistantEntry ? assistantEntry.content : '';
+
+                        // Use configured system prompt
+                        const systemPrompt = this.config && this.config.openaiapi ? this.config.openaiapi.systemPrompt : '';
+
+                        // Persist to JSONL via class helper
+                        await this.saveToJSONL(systemPrompt, userPrompt, aiResponse);
+                        this.trainingDataFromMessage++;
+
+                        // Log the save action
+                        try {
+                            await this.logToFile(`Saved training data from message ${msg.id} (reactions ${reaction.count})`);
+                        } catch (e) {}
+                    } catch (err) {
+                        console.error('Error saving training data from reaction:', err);
+                    }
+                }
+            } catch (error) {
+                console.error('messageReactionAdd handler error:', error);
+            }
+        });
+
         console.log('Event handlers setup complete');
     }
 
