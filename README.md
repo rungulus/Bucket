@@ -92,7 +92,7 @@ Training will also take a while, especially if you've given it a lot of data. Fo
 
 2. Open a terminal/command prompt in the `bot` folder, then run `npm install` to grab all the dependencies
   
-3. Once that's done, run `npm run bucket` to start the bot!
+3. Once that's done, run `npm start` to start the bot!
 
 Bucket will log responses, and who triggered the bot in the `/bot/logs/` folder. 
 
