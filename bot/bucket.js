@@ -486,7 +486,7 @@ class Bucket extends EventEmitter {
         // Include the current message first
         let senderDisplayName = currentMessage.member ? currentMessage.member.user.username : currentMessage.author.username;
         // Sanitize the displayName and truncate if necessary
-        senderDisplayName = senderDisplayName.replace(/[^a-zA-Z0-9_-]/g, '');
+        //senderDisplayName = senderDisplayName.replace(/[^a-zA-Z0-9_-]/g, '');
         if (senderDisplayName.length > 64) {
             senderDisplayName = senderDisplayName.substring(0, 64);
         }
@@ -513,7 +513,7 @@ class Bucket extends EventEmitter {
                 senderDisplayName = currentMessage.member ? currentMessage.member.user.username : currentMessage.author.username;
                 //console.log('presanitized username:' + senderDisplayName);
                 // Sanitize the username and truncate if necessary
-                senderDisplayName = senderDisplayName.replace(/[^a-zA-Z0-9_-]/g, '');
+                //senderDisplayName = senderDisplayName.replace(/[^a-zA-Z0-9_-]/g, '');
                 //console.log('sanitized username:' + senderDisplayName);
                 if (senderDisplayName.length > 64) {
                     senderDisplayName = senderDisplayName.substring(0, 64);
@@ -945,7 +945,7 @@ class Bucket extends EventEmitter {
         if (!username) return 'User';
 
         // Filter out special characters and limit length
-        let sanitized = username.replace(/[^a-zA-Z0-9_-]/g, '');
+        //let sanitized = username.replace(/[^a-zA-Z0-9_-]/g, '');
         if (sanitized.length > 64) {
             sanitized = sanitized.substring(0, 64);
         }
