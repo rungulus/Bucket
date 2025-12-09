@@ -2,7 +2,6 @@ const EventEmitter = require('events');
 const fs = require("fs");
 const OpenAI = require("openai");
 const Discord = require("discord.js");
-const { Events } = require("discord.js");
 const path = require('path');
 //const { config } = require('process');
 let inquirer;
@@ -23,23 +22,6 @@ async function loadInquirer() {
         import ('inquirer')).default;
 }
 
-const saveToJSONL = async(systemPrompt, userPrompt, aiResponse) => {
-    const data = {
-        messages: [
-            { role: 'system', content: systemPrompt },
-            { role: 'user', content: userPrompt },
-            { role: 'assistant', content: aiResponse }
-            //try to save in chat completion format
-        ]
-    };
-    try {
-        const jsonlData = JSON.stringify(data) + '\n';
-        fs.appendFileSync('saved-messages.jsonl', jsonlData);
-        botState = 'Idle';
-    } catch (error) {
-        latestError = 'Error saving data to JSONL file:', error;
-    }
-};
 
 class Bucket extends EventEmitter {
     constructor() {
@@ -50,7 +32,7 @@ class Bucket extends EventEmitter {
         this.totalInputTokensUsed = 0;
         this.totalOutputTokensUsed = 0;
         this.totalTokensUsed = 0;
-        this.recentMessages = new Map();
+        this.recentMessages = [];
         this.chatHistory = new Map();
         this.maxHistoryTokens = 1024;
         this.minHistoryMessages = 3;
@@ -143,6 +125,15 @@ class Bucket extends EventEmitter {
                 // Increment ping counter if it's a ping
                 if (message.mentions.has(this.client.user)) {
                     this.totalPings++;
+                    // Log original and sanitized username for pings
+                    try {
+                        const originalName = message.member ? message.member.displayName : message.author.username;
+                        const sanitizedName = this.sanitizeUsername(originalName);
+                        const logEntry = `Ping | channel=${message.channel.id} | messageId=${message.id} | authorId=${message.author.id} | originalName=${originalName} | sanitizedName=${sanitizedName}`;
+                        await this.logToFile(logEntry);
+                    } catch (e) {
+                        // ignore logging errors
+                    }
                 }
 
                 // Start typing indicator
@@ -187,13 +178,31 @@ class Bucket extends EventEmitter {
                         const imageUrl = imageAttachments.first().url;
                         const imageDescription = await this.getImageDescription(imageUrl);
 
+                        // Persist image description to log file for auditing
+                        try {
+                            const logEntry = `Image processed | channel=${message.channel.id} | author=${message.author.id} | user=${this.sanitizeUsername(message.member ? message.member.displayName : message.author.username)} | url=${imageUrl} | description=${imageDescription} | message=${this.userMessageContent}`;
+                            await this.logToFile(logEntry);
+                        } catch (e) {
+                            // swallow logging errors to avoid interrupting message flow
+                        }
+
                         // Create the user message with image description
                         finalUserMessage = `[Image: ${imageDescription}] ${this.userMessageContent}`;
 
                         // Add image description to message history
+                        const imageContextMsg = { role: "system", name: this.botTag || "Bucket", content: `[Image Context: ${imageDescription}]` };
+
+                        // Persist image context into the in-memory chat history for this channel
+                        try {
+                            this.addToHistory(message.channel.id, imageContextMsg);
+                        } catch (e) {
+                            // ignore if history persistence fails
+                        }
+
                         const messagesArray = [
                             { role: "system", name: this.botTag || "Bucket", content: this.config.openaiapi.systemPrompt },
                             ...history,
+                            imageContextMsg,
                             { role: "user", name: this.sanitizeUsername(message.member ? message.member.displayName : message.author.username), content: finalUserMessage }
                         ];
 
@@ -385,8 +394,9 @@ class Bucket extends EventEmitter {
             this.allowedChannelId = this.config.allowedChannelId;
             this.trainEmoji = this.config.trainEmoji;
             this.reactionCount = this.config.reactionCount;
-            this.removePings = this.config.removePings;
-            this.removeLinks = this.config.removeLinks;
+            // Coerce boolean-like config fields to booleans
+            this.removePings = !!this.config.removePings;
+            this.removeLinks = !!this.config.removeLinks;
             this.randomChannels = this.config.randomChannels || []; // Array of {channelId, chance}
             // How old messages can be to include in history (in minutes)
             this.historyAgeMinutes = typeof this.config.historyAgeMinutes === 'number' ? this.config.historyAgeMinutes : 15;
@@ -395,6 +405,19 @@ class Bucket extends EventEmitter {
 
             // Update max history tokens based on model
             this.updateMaxHistoryTokens();
+
+            // Normalize severityCategory: allow numeric or string labels
+            if (typeof this.severityCategory !== 'number') {
+                const sc = String(this.severityCategory || '').toLowerCase();
+                const map = {
+                    'low': 1,
+                    'medium': 5,
+                    'med': 5,
+                    'high': 8,
+                    'critical': 10
+                };
+                this.severityCategory = map[sc] !== undefined ? map[sc] : 0;
+            }
         } catch (error) {
             console.error('Error loading config:', error);
             throw new Error('Config not loaded');
@@ -408,7 +431,7 @@ class Bucket extends EventEmitter {
             { name: 'trainEmoji', message: 'Enter the emoji used to save training data' },
             { name: 'reactionCount', message: 'How many reactions until we should save training data?' },
             { name: 'removePings', message: 'Remove Pings? (1 - Yes, 0 - No)' },
-            { name: 'trainEmoji', message: 'Remove Links? (1- Yes, 0 - No)' }
+            { name: 'removeLinks', message: 'Remove Links? (1 - Yes, 0 - No)' }
         ];
         return inquirer.prompt(questions);
     }
@@ -540,7 +563,7 @@ class Bucket extends EventEmitter {
 
     async getImageDescription(imageUrl) {
         try {
-            console.log('Getting image description for:', imageUrl);
+            //console.log('Getting image description for:', imageUrl);
             const response = await this.openai.chat.completions.create({
                 model: "gpt-4.1-mini",
                 messages: [{
@@ -564,7 +587,7 @@ class Bucket extends EventEmitter {
                 throw new Error('Vision API returned an invalid response');
             }
 
-            console.log('Got image description:', response.choices[0].message.content);
+            //console.log('Got image description:', response.choices[0].message.content);
             return response.choices[0].message.content;
         } catch (error) {
             console.error('Error getting image description:', error);
@@ -580,6 +603,14 @@ class Bucket extends EventEmitter {
 
             // First, get a detailed description of the image
             const imageDescription = await this.getImageDescription(imageUrl);
+
+            // Persist image processing to log file
+            try {
+                const logEntry = `Image processed (direct) | url=${imageUrl} | description=${imageDescription} | message=${userMessage}`;
+                await this.logToFile(logEntry);
+            } catch (e) {
+                // ignore logging errors
+            }
 
             // Construct the messages array with clear separation between image context and user message
             const messages = [
@@ -747,10 +778,14 @@ class Bucket extends EventEmitter {
             }
 
             const responseContent = response.choices[0].message.content;
+            // store the response for UI/status
+            this.responseContent = responseContent;
+            this.filteredResponse = '';
 
             // Check for blocked words in the response
             if (this.containsBlockedWords(responseContent)) {
                 this.blockedWordsCount++;
+                this.filteredResponse = '[filtered due to blocked words]';
                 console.log('Blocked word detected, giving up.');
                 return;
             }
@@ -780,9 +815,14 @@ class Bucket extends EventEmitter {
                 if (retryResponse && retryResponse.choices && retryResponse.choices[0] && retryResponse.choices[0].message && retryResponse.choices[0].message.content) {
                     const retryContent = retryResponse.choices[0].message.content;
 
+                    // store retry response for UI/status
+                    this.responseContent = retryContent;
+                    this.filteredResponse = '';
+
                     // Check blocked words again
                     if (this.containsBlockedWords(retryContent)) {
                         this.blockedWordsCount++;
+                        this.filteredResponse = '[filtered due to blocked words]';
                         console.log('Blocked word detected, giving up.');
                         return;
                     }
@@ -800,12 +840,19 @@ class Bucket extends EventEmitter {
                     const messageChainWithResponse = [...updatedMessages, { role: "assistant", name: this.botTag || "Bucket", content: retryContent }];
                     this.addToRecentMessageChains(messageChainWithResponse);
 
-                    // Update token usage
-                    this.inputTokensUsed = parseInt(retryResponse.usage.prompt_tokens);
-                    this.totalInputTokensUsed += this.inputTokensUsed;
-                    this.outputTokensUsed = parseInt(retryResponse.usage.completion_tokens);
-                    this.totalOutputTokensUsed += this.outputTokensUsed;
-                    this.totalTokensUsed += parseInt(retryResponse.usage.total_tokens);
+                    // Update token usage (guarded)
+                    try {
+                        const usage = retryResponse.usage || {};
+                        const promptTokens = Number.isFinite(Number(usage.prompt_tokens)) ? Number(usage.prompt_tokens) : 0;
+                        const completionTokens = Number.isFinite(Number(usage.completion_tokens)) ? Number(usage.completion_tokens) : 0;
+                        const totalTokens = Number.isFinite(Number(usage.total_tokens)) ? Number(usage.total_tokens) : (promptTokens + completionTokens);
+
+                        this.inputTokensUsed = promptTokens;
+                        this.totalInputTokensUsed += this.inputTokensUsed;
+                        this.outputTokensUsed = completionTokens;
+                        this.totalOutputTokensUsed += this.outputTokensUsed;
+                        this.totalTokensUsed += totalTokens;
+                    } catch (e) {}
 
                     return retryContent;
                 }
@@ -834,9 +881,14 @@ class Bucket extends EventEmitter {
                 if (retryResponse && retryResponse.choices && retryResponse.choices[0] && retryResponse.choices[0].message && retryResponse.choices[0].message.content) {
                     const retryContent = retryResponse.choices[0].message.content;
 
+                    // store retry response for UI/status
+                    this.responseContent = retryContent;
+                    this.filteredResponse = '';
+
                     // Check blocked words again
                     if (this.containsBlockedWords(retryContent)) {
                         this.blockedWordsCount++;
+                        this.filteredResponse = '[filtered due to blocked words]';
                         console.log('Blocked word detected, giving up.');
                         return;
                     }
@@ -848,12 +900,19 @@ class Bucket extends EventEmitter {
                     const messageChainWithResponse = [...updatedMessages, { role: "assistant", name: this.botTag || "Bucket", content: retryContent }];
                     this.addToRecentMessageChains(messageChainWithResponse);
 
-                    // Update token usage
-                    this.inputTokensUsed = parseInt(retryResponse.usage.prompt_tokens);
-                    this.totalInputTokensUsed += this.inputTokensUsed;
-                    this.outputTokensUsed = parseInt(retryResponse.usage.completion_tokens);
-                    this.totalOutputTokensUsed += this.outputTokensUsed;
-                    this.totalTokensUsed += parseInt(retryResponse.usage.total_tokens);
+                    // Update token usage (guarded)
+                    try {
+                        const usage = retryResponse.usage || {};
+                        const promptTokens = Number.isFinite(Number(usage.prompt_tokens)) ? Number(usage.prompt_tokens) : 0;
+                        const completionTokens = Number.isFinite(Number(usage.completion_tokens)) ? Number(usage.completion_tokens) : 0;
+                        const totalTokens = Number.isFinite(Number(usage.total_tokens)) ? Number(usage.total_tokens) : (promptTokens + completionTokens);
+
+                        this.inputTokensUsed = promptTokens;
+                        this.totalInputTokensUsed += this.inputTokensUsed;
+                        this.outputTokensUsed = completionTokens;
+                        this.totalOutputTokensUsed += this.outputTokensUsed;
+                        this.totalTokensUsed += totalTokens;
+                    } catch (e) {}
 
                     return retryContent;
                 }
@@ -866,12 +925,21 @@ class Bucket extends EventEmitter {
             const messageChainWithResponse = [...messages, { role: "assistant", name: this.botTag || "Bucket", content: responseContent }];
             this.addToRecentMessageChains(messageChainWithResponse);
 
-            // Update token usage for fine-tuned model
-            this.inputTokensUsed = parseInt(response.usage.prompt_tokens);
-            this.totalInputTokensUsed += this.inputTokensUsed;
-            this.outputTokensUsed = parseInt(response.usage.completion_tokens);
-            this.totalOutputTokensUsed += this.outputTokensUsed;
-            this.totalTokensUsed += parseInt(response.usage.total_tokens);
+            // Update token usage for fine-tuned model (guard against missing usage)
+            try {
+                const usage = response.usage || {};
+                const promptTokens = Number.isFinite(Number(usage.prompt_tokens)) ? Number(usage.prompt_tokens) : 0;
+                const completionTokens = Number.isFinite(Number(usage.completion_tokens)) ? Number(usage.completion_tokens) : 0;
+                const totalTokens = Number.isFinite(Number(usage.total_tokens)) ? Number(usage.total_tokens) : (promptTokens + completionTokens);
+
+                this.inputTokensUsed = promptTokens;
+                this.totalInputTokensUsed += this.inputTokensUsed;
+                this.outputTokensUsed = completionTokens;
+                this.totalOutputTokensUsed += this.outputTokensUsed;
+                this.totalTokensUsed += totalTokens;
+            } catch (e) {
+                // If usage is not present or unexpected, skip updating tokens
+            }
 
             return responseContent;
         } catch (error) {
@@ -886,10 +954,14 @@ class Bucket extends EventEmitter {
             const rows = csvData.split('\n').slice(1); // Skip header row
             const wordsWithSeverity = rows.map(row => {
                 const columns = row.split(',');
-                const word = columns[0].trim().toLowerCase(); // text column
-                const severity = Number(columns[7].trim()); // severity_rating column
+                const word = (columns[0] || '').trim().toLowerCase(); // text column
+                let severity = 0;
+                if (columns.length > 7 && columns[7] !== undefined && columns[7].trim().length > 0) {
+                    const parsed = Number(columns[7].trim());
+                    severity = Number.isFinite(parsed) ? parsed : 0;
+                }
                 return { word, severity };
-            });
+            }).filter(entry => entry.word.length > 0);
 
             //only block stuff greater than (or equal to) the severity
             return wordsWithSeverity.filter(entry => entry.severity >= severityCategory);
@@ -945,14 +1017,14 @@ class Bucket extends EventEmitter {
         if (!username) return 'User';
 
         // Filter out special characters and limit length
-        //let sanitized = username.replace(/[^a-zA-Z0-9_-]/g, '');
-        if (sanitized.length > 64) {
-            sanitized = sanitized.substring(0, 64);
+        let sanitized = username.replace(/[^a-zA-Z0-9_\-]/g, '');
+        if (!sanitized || sanitized.length === 0) {
+            // fallback to a safe default if stripping removed all characters
+            sanitized = 'User';
         }
 
-        // Ensure username is not empty after filtering
-        if (!sanitized || sanitized.length === 0) {
-            sanitized = 'User';
+        if (sanitized.length > 64) {
+            sanitized = sanitized.substring(0, 64);
         }
 
         return sanitized;
