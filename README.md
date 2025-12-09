@@ -71,8 +71,8 @@ Training will also take a while, especially if you've given it a lot of data. Fo
     - default: 0.3
   - frequencyPenalty: how "repetitive" the bot should be, can be 0-2. lower is more "repetitive"
     - default: 0.3
-  - severityCategory: what "level" of slurs and bad words should we filter, can be 0-3.
-    - default: 2.6
+  - severityCategory: what "level" of slurs and bad words should we filter.
+    - default: high
   <hr>
   
   - systemPrompt: your system prompt that the ai will use
@@ -85,9 +85,9 @@ Training will also take a while, especially if you've given it a lot of data. Fo
 - removePings: can be 0 or 1, 1 to remove pings, 0 to allow them
 - removeLinks: can be 0 or 1, 1 to remove links, 0 to allow them
 - randomChannels
-  - name: the name of the channel (can be anything
+  - name: the name of the channel (can be anything)
   - channelId: the id of the channel you want the bot in
-  - chance: the percentage chance you want the bot to reply, can be `0-1` - `45% = 0.45`
+  - chance: the percentage chance you want the bot to reply, can be `0-1` - `45% = 0.45` (set this lower than you'd think, 5% is good)
 <hr>
 
 2. Open a terminal/command prompt in the `bot` folder, then run `npm install` to grab all the dependencies
