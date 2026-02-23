@@ -279,6 +279,7 @@ class Bucket extends EventEmitter {
 
                 const trainEmoji = this.trainEmoji;
                 const stopEmoji = this.stopEmoji;
+                const requiredCount = parseFloat(this.reactionCount) || 1;
 
                 // Handle silence emoji to stop random responses for a configurable duration
                 if (stopEmoji && (reaction.emoji.name === stopEmoji || reaction.emoji.id === stopEmoji)) {
@@ -289,8 +290,6 @@ class Bucket extends EventEmitter {
                     } catch (e) {}
                     return;
                 }
-
-                const requiredCount = parseFloat(this.reactionCount) || 1;
 
                 // Match emoji by name or id
                 const emojiMatches = (reaction.emoji && (reaction.emoji.name === trainEmoji || reaction.emoji.id === trainEmoji));
