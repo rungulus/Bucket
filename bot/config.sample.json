@@ -3,6 +3,8 @@
     "allowedChannelId": "YOUR_CHANNEL_ID",
     "trainEmoji": "🔥",
     "reactionCount": 3,
+    "stopEmoji": "🤫",
+    "silenceDurationMinutes": 30,
     "openaiapi": {
         "apiKey": "YOUR_OPENAI_API_KEY",
         "modelId": "your fine tuned model id",

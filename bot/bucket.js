@@ -56,6 +56,7 @@ class Bucket extends EventEmitter {
         this.totalImagesProcessed = 0;
         this.lastResponseTime = null;
         this.uiOpen = false;
+        this.silencedChannels = new Map();
         this.client = new Discord.Client({
             intents: [
                 Discord.GatewayIntentBits.Guilds,
@@ -277,6 +278,18 @@ class Bucket extends EventEmitter {
                 if (!this.config) await this.loadConfig();
 
                 const trainEmoji = this.trainEmoji;
+                const stopEmoji = this.stopEmoji;
+
+                // Handle silence emoji to stop random responses for a configurable duration
+                if (stopEmoji && (reaction.emoji.name === stopEmoji || reaction.emoji.id === stopEmoji)) {
+                    const duration = (this.silenceDurationMinutes || 30) * 60 * 1000;
+                    this.silencedChannels.set(msg.channelId, Date.now() + duration);
+                    try {
+                        await this.logToFile(`Channel ${msg.channelId} silenced by ${user.tag} until ${new Date(Date.now() + duration).toISOString()}`);
+                    } catch (e) {}
+                    return;
+                }
+
                 const requiredCount = parseFloat(this.reactionCount) || 1;
 
                 // Match emoji by name or id
@@ -454,6 +467,8 @@ class Bucket extends EventEmitter {
             this.severityCategory = this.config.severityCategory;
             this.allowedChannelId = this.config.allowedChannelId;
             this.trainEmoji = this.config.trainEmoji;
+            this.stopEmoji = this.config.stopEmoji;
+            this.silenceDurationMinutes = typeof this.config.silenceDurationMinutes === 'number' ? this.config.silenceDurationMinutes : 30;
             this.reactionCount = this.config.reactionCount;
             // Coerce boolean-like config fields to booleans
             this.removePings = !!this.config.removePings;
@@ -748,6 +763,12 @@ class Bucket extends EventEmitter {
             // In allowed channel, only respond to pings
             const shouldRespond = message.mentions.has(this.client.user);
             return shouldRespond;
+        }
+
+        // Check if channel is silenced for random responses
+        const silenceExpiry = this.silencedChannels.get(message.channelId);
+        if (silenceExpiry && Date.now() < silenceExpiry) {
+            return false;
         }
 
         // Check if message is in a random channel
