@@ -464,7 +464,18 @@ class Bucket extends EventEmitter {
             this.discordToken = this.config.discordToken;
             this.openaiapi = this.config.openaiapi;
             this.severityCategory = this.config.severityCategory;
-            this.allowedChannelId = this.config.allowedChannelId;
+            // Support either a single allowedChannelId (string) or an array of IDs for backward compatibility
+            const ac = this.config.allowedChannelId;
+            if (Array.isArray(ac)) {
+                this.allowedChannelIds = ac.map(String);
+                this.allowedChannelId = this.allowedChannelIds[0] || null;
+            } else if (typeof ac === 'string' && ac.length > 0) {
+                this.allowedChannelIds = [ac];
+                this.allowedChannelId = ac;
+            } else {
+                this.allowedChannelIds = [];
+                this.allowedChannelId = null;
+            }
             this.trainEmoji = this.config.trainEmoji;
             this.stopEmoji = this.config.stopEmoji;
             this.silenceDurationMinutes = typeof this.config.silenceDurationMinutes === 'number' ? this.config.silenceDurationMinutes : 30;
@@ -757,11 +768,13 @@ class Bucket extends EventEmitter {
     }
 
     shouldRespondToMessage(message) {
-        // Check if message is in allowed channel
-        if (message.channelId === this.allowedChannelId) {
-            // In allowed channel, only respond to pings
-            const shouldRespond = message.mentions.has(this.client.user);
-            return shouldRespond;
+        // Check if message is in allowed channel (supports single ID or list)
+        if (this.allowedChannelIds && this.allowedChannelIds.length > 0) {
+            if (this.allowedChannelIds.includes(message.channelId)) {
+                // In allowed channel, only respond to pings
+                const shouldRespond = message.mentions.has(this.client.user);
+                return shouldRespond;
+            }
         }
 
         // Check if channel is silenced for random responses
