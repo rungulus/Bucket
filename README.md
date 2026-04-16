@@ -102,5 +102,25 @@ Training will also take a while, especially if you've given it a lot of data. Fo
 
 Bucket will log responses, and who triggered the bot in the `/bot/logs/` folder. 
 
+## Step 4 - Tuning
+
+Tuning the AI Model is not an exact science, and will vary between models. I've found that the following settings are best for starting off with:
+
+  - temperature: how "random" you want the bot to be, can be 0-2. lower is less "random"
+    - 0.9
+  - presencePenalty: how "on topic" the bot should be, can be 0-2. lower is more "on topic"
+    - 0.3
+  - frequencyPenalty: how "repetitive" the bot should be, can be 0-2. lower is more "repetitive"
+    - 0.3
+
+Bucket will read the config each time the bot is triggered, so you don't need to restart the bot each time you change one of these values (just save `config.json` and the bot will pick it up). Some general advice:
+
+- If the bot is too off topic, or giving seemingly random replies, try lowering the `temperature` value
+
+- If the bot keeps copying user messages, try raising the `presencePenalty` value
+
+- If the bot sends long messages of random characters/words, try raising the `frequencyPenalty` value
+
+I'd recommend looking up some further info on these penalties and how they work on the backend for further tuning, [this article](https://medium.com/@pushparajgenai2025/understanding-presence-penalty-and-frequency-penalty-in-openai-chat-completion-api-calls-2e3a22547b48) is a good read.
 ## Contributing
 Feel Free! If you want to change something just open a PR.
