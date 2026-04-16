@@ -53,9 +53,11 @@ Training will also take a while, especially if you've given it a lot of data. Fo
 1. Rename `bot/config.sample.json` to `config.json`, and get ready to enter a lot of settings:
 
 - discordToken: your discord api key you got from the developer's portal
-- allowedChannelId: the channel you want the bot to look at for pings (can be a thread)
+- allowedChannelId: the channel you want the bot to look at for pings (can be a thread). This can be a single channel ID string or an array of channel ID strings to allow multiple channels/threads.
 - trainEmoji: an emoji reaction you want the bot to watch for to save the response (and original message) for future training
 - reactionCount: how many reactions until the bot should save the message
+- stopEmoji: what emoji to use to have Bucket stop checking messages in the random chance channels for a configurable time
+- silenceDurationMinutes: how long Bucket should stop checking messages when silenced with stopEmoji
 - openaiapi section:
   - apiKey: your OpenAI api key
   - modelId: your fine tuned model id

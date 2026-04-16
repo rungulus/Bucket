@@ -1,6 +1,6 @@
 {
     "discordToken": "YOUR_DISCORD_TOKEN",
-    "allowedChannelId": "YOUR_CHANNEL_ID",
+    "allowedChannelId": ["YOUR_CHANNEL_ID","SECOND_OPTIONAL_CHANNEL_ID"],
     "trainEmoji": "🔥",
     "reactionCount": 3,
     "stopEmoji": "🤫",
