@@ -768,19 +768,18 @@ class Bucket extends EventEmitter {
     }
 
     shouldRespondToMessage(message) {
-        // Check if message is in allowed channel (supports single ID or list)
-        if (this.allowedChannelIds && this.allowedChannelIds.length > 0) {
-            if (this.allowedChannelIds.includes(message.channelId)) {
-                // In allowed channel, only respond to pings
-                const shouldRespond = message.mentions.has(this.client.user);
-                return shouldRespond;
-            }
-        }
-
         // Check if channel is silenced for random responses
         const silenceExpiry = this.silencedChannels.get(message.channelId);
         if (silenceExpiry && Date.now() < silenceExpiry) {
             return false;
+        }
+
+        // If this is an allowed channel, respond to mentions.
+        if (this.allowedChannelIds && this.allowedChannelIds.length > 0 && this.allowedChannelIds.includes(message.channelId)) {
+            if (message.mentions.has(this.client.user)) {
+                return true;
+            }
+            // Do not return false here; allow random channel rules to also apply in the same channel.
         }
 
         // Check if message is in a random channel
@@ -793,7 +792,7 @@ class Bucket extends EventEmitter {
             return shouldRespond;
         }
 
-        // Not in allowed or random channel
+        // Not in allowed or random channel, or allowed channel mention not present
         return false;
     }
 
