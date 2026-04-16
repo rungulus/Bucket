@@ -1,7 +1,3 @@
----
-marp: false
----
-
 <img src='bucket.png' width='100' align="right">
 
 # Bucket
