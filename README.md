@@ -1,3 +1,7 @@
+---
+marp: false
+---
+
 <img src='bucket.png' width='100' align="right">
 
 # Bucket
@@ -29,6 +33,8 @@ You will need:
   3. Once you have your json files, make a folder called `dirty-data` in the `preparation` folder, and put all the json files in there.
 
   4. Run the `jsoncleaner.py` python script.
+
+   > You can also use the `jsoncleaner-guided.py` script for more guided training (one user is designated as the user, all others are asisstant replies)
 
   5. When asked, enter your system prompt. 
   
