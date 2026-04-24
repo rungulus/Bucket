@@ -627,8 +627,12 @@
                     <span class="stat-value" id="totalTokensUsed">0</span>
                 </div>
                 <div class="stat-row">
-                    <span class="stat-label">Input/Output Tokens:</span>
-                    <span class="stat-value" id="inputOutputTokens">0 / 0</span>
+                    <span class="stat-label">Training Data:</span>
+                    <span class="stat-value" id="trainingDataFromMessage">0</span>
+                </div>
+                <div class="stat-row">
+                    <span class="stat-label">Channels Silenced:</span>
+                    <span class="stat-value" id="silenceEventsCount">0</span>
                 </div>
             </div>
 
@@ -661,6 +665,15 @@
                         <span class="response-time">No responses yet</span>
                     </div>
                     <div class="response-text">Waiting for bot activity...</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="log-section">
+            <h3>Silenced Channels</h3>
+            <div class="channels-container" id="silencedChannelsContainer">
+                <div class="channel-entry">
+                    <span class="channel-name">No silenced channels</span>
                 </div>
             </div>
         </div>
@@ -712,6 +725,7 @@
         const messageChainContainer = document.getElementById('messageChainContainer');
         const channelsContainer = document.getElementById('channelsContainer');
         const addChannelBtn = document.getElementById('addChannelBtn');
+        const silencedChannelsContainer = document.getElementById('silencedChannelsContainer');
 
         // Store recent message chains
         let recentMessageChains = [];
@@ -841,6 +855,32 @@
                     </div>
                 `;
                 channelsContainer.appendChild(channelEntry);
+            });
+        }
+
+        // Silenced channels display function
+        function updateSilencedChannels(silencedChannels) {
+            silencedChannelsContainer.innerHTML = '';
+
+            if (!silencedChannels || silencedChannels.length === 0) {
+                silencedChannelsContainer.innerHTML = '<div class="channel-entry"><span class="channel-name">No silenced channels</span></div>';
+                return;
+            }
+
+            silencedChannels.forEach((channel) => {
+                const channelEntry = document.createElement('div');
+                channelEntry.className = 'channel-entry';
+
+                const expiresAt = new Date(channel.expiresAt);
+                const timeString = expiresAt.toLocaleTimeString();
+
+                channelEntry.innerHTML = `
+                    <div class="channel-info">
+                        <span class="channel-name">Channel ${channel.channelId}</span>
+                        <span class="channel-id">${timeString} (${channel.minutesRemaining}m remaining)</span>
+                    </div>
+                `;
+                silencedChannelsContainer.appendChild(channelEntry);
             });
         }
 
@@ -975,7 +1015,8 @@
             document.getElementById('totalImagesProcessed').textContent = data.totalImagesProcessed || 0;
             document.getElementById('blockedWordsCount').textContent = data.blockedWordsCount || 0;
             document.getElementById('totalTokensUsed').textContent = (data.totalTokensUsed || 0).toLocaleString();
-            document.getElementById('inputOutputTokens').textContent = `${(data.totalInputTokensUsed || 0).toLocaleString()} / ${(data.totalOutputTokensUsed || 0).toLocaleString()}`;
+            document.getElementById('trainingDataFromMessage').textContent = data.trainingDataFromMessage || 0;
+            document.getElementById('silenceEventsCount').textContent = data.silenceEventsCount || 0;
 
             // Update model config with special handling for model ID
             const modelIdElement = document.getElementById('modelId');
@@ -1011,6 +1052,9 @@
 
             // Update channels
             updateChannels(data.randomChannels);
+
+            // Update silenced channels
+            updateSilencedChannels(data.silencedChannels);
         });
 
         // Error handler

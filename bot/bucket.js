@@ -42,6 +42,7 @@ class Bucket extends EventEmitter {
         this.totalPings = 0;
         this.blockedWordsCount = 0;
         this.trainingDataFromMessage = 0;
+        this.silenceEventsCount = 0;
         this.latestError = 'none!';
         this.filteredResponse = '';
         this.userMessageContent = '';
@@ -284,10 +285,33 @@ class Bucket extends EventEmitter {
                 // Handle silence emoji to stop random responses for a configurable duration
                 if (stopEmoji && (reaction.emoji.name === stopEmoji || reaction.emoji.id === stopEmoji)) {
                     const duration = (this.silenceDurationMinutes || 30) * 60 * 1000;
-                    this.silencedChannels.set(msg.channelId, Date.now() + duration);
+                    const silenceUntilTime = Date.now() + duration;
+                    const unixTimestamp = Math.floor(silenceUntilTime / 1000);
+                    this.silencedChannels.set(msg.channelId, silenceUntilTime);
+                    this.silenceEventsCount++;
+
+                    // Console logging
+                    console.log(`[STOP EMOJI] Channel ${msg.channelId} silenced by ${user.tag} for ${this.silenceDurationMinutes || 30} minutes until ${new Date(silenceUntilTime).toISOString()}`);
+
+                    // Remove all reactions from the message if we have permissions
                     try {
-                        await this.logToFile(`Channel ${msg.channelId} silenced by ${user.tag} until ${new Date(Date.now() + duration).toISOString()}`);
-                    } catch (e) {}
+                        await msg.reactions.removeAll();
+                    } catch (e) {
+                        // Silently fail if we don't have permissions to remove reactions
+                    }
+
+                    // Send message to channel with silence notification
+                    try {
+                        await msg.channel.send(`-# silenced until <t:${unixTimestamp}:t>`);
+                    } catch (e) {
+                        console.error('Failed to send silence notification:', e);
+                    }
+
+                    try {
+                        await this.logToFile(`Channel ${msg.channelId} silenced by ${user.tag} until ${new Date(silenceUntilTime).toISOString()}`);
+                    } catch (e) {
+                        console.error('Failed to log silence event:', e);
+                    }
                     return;
                 }
 
@@ -770,8 +794,13 @@ class Bucket extends EventEmitter {
     shouldRespondToMessage(message) {
         // Check if channel is silenced for random responses
         const silenceExpiry = this.silencedChannels.get(message.channelId);
-        if (silenceExpiry && Date.now() < silenceExpiry) {
-            return false;
+        if (silenceExpiry) {
+            if (Date.now() < silenceExpiry) {
+                return false;
+            } else {
+                // Clean up expired silence
+                this.silencedChannels.delete(message.channelId);
+            }
         }
 
         // If this is an allowed channel, respond to mentions.
@@ -1093,6 +1122,12 @@ class Bucket extends EventEmitter {
             totalPings: this.totalPings,
             blockedWordsCount: this.blockedWordsCount,
             trainingDataFromMessage: this.trainingDataFromMessage,
+            silenceEventsCount: this.silenceEventsCount,
+            silencedChannels: Array.from(this.silencedChannels.entries()).map(([channelId, expiryTime]) => ({
+                channelId,
+                expiresAt: new Date(expiryTime).toISOString(),
+                minutesRemaining: Math.max(0, Math.ceil((expiryTime - Date.now()) / 60000))
+            })),
             totalTokensUsed: this.totalTokensUsed,
             inputTokensUsed: this.inputTokensUsed,
             totalInputTokensUsed: this.totalInputTokensUsed,
@@ -1250,6 +1285,10 @@ class Bucket extends EventEmitter {
         const uptime = this.getUptime();
         const recentResponses = this.getRecentResponsesDisplay();
         const lastResponse = this.lastResponseTime ? new Date(this.lastResponseTime).toLocaleTimeString() : 'Never';
+        const silencedChannelsList = Array.from(this.silencedChannels.entries())
+            .filter(([_, expiryTime]) => Date.now() < expiryTime)
+            .map(([channelId, expiryTime]) => `${channelId} (${Math.ceil((expiryTime - Date.now()) / 60000)}m)`)
+            .join(', ') || 'None';
 
         console.log('\n' + '='.repeat(60));
         console.log('BUCKET BOT STATUS');
@@ -1263,6 +1302,8 @@ class Bucket extends EventEmitter {
         console.log(`Presence Penalty: ${this.config?.openaiapi?.presencePenalty || 'Unknown'}`);
         console.log(`Max Tokens: ${this.config?.openaiapi?.maxTokens || 'Unknown'}`);
         console.log(`Random Channels: ${this.randomChannels?.length || 0} configured`);
+        console.log(`Silenced Channels: ${silencedChannelsList}`);
+        console.log(`Silence Events: ${this.silenceEventsCount}`);
         console.log(`Blocked Words Count: ${this.blockedWordsCount}`);
         console.log(`Last Response: ${lastResponse}`);
         console.log(`Total Tokens Used: ${this.totalTokensUsed.toLocaleString()}`);
