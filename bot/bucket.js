@@ -188,8 +188,8 @@ class Bucket extends EventEmitter {
                             // swallow logging errors to avoid interrupting message flow
                         }
 
-                        // Create the user message with image description
-                        finalUserMessage = `[Image: ${imageDescription}] ${this.userMessageContent}`;
+                        // Don't duplicate image description in user message—it's already in the system message above
+                        finalUserMessage = this.userMessageContent;
 
                         // Add image description to message history
                         const imageContextMsg = { role: "system", name: this.botTag || "Bucket", content: `[Image Context: ${imageDescription}]` };

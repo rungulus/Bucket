@@ -766,9 +766,13 @@
 
                         messageItem.innerHTML = `
                     <div class="message-role">${roleText}</div>
-                    ${message.name ? `<div class="message-name">${message.name}</div>` : ''}
-                    <div class="message-content">${message.content}</div>
+                    ${message.name ? `<div class="message-name"></div>` : ''}
+                    <div class="message-content"></div>
                 `;
+                        if (message.name) {
+                            messageItem.querySelector('.message-name').textContent = message.name;
+                        }
+                        messageItem.querySelector('.message-content').textContent = message.content;
                 
                 messageChainContainer.appendChild(messageItem);
             });
@@ -984,13 +988,18 @@
                         <span class="response-time">${timeString}</span>
                         <span class="response-sender">${sender}</span>
                     </div>
-                    <div class="response-original">"${originalMessage.length > 50 ? originalMessage.substring(0, 50) + '...' : originalMessage}"</div>
-                    <div class="response-text">"${responseContent.length > 100 ? responseContent.substring(0, 100) + '...' : responseContent}"</div>
+                    <div class="response-original"></div>
+                    <div class="response-text"></div>
                 `;
-                
+
+                const truncatedMessage = originalMessage.length > 50 ? originalMessage.substring(0, 50) + '...' : originalMessage;
+                const truncatedResponse = responseContent.length > 100 ? responseContent.substring(0, 100) + '...' : responseContent;
+
+                responseCard.querySelector('.response-original').textContent = `"${truncatedMessage}"`;
+                responseCard.querySelector('.response-text').textContent = `"${truncatedResponse}"`;
+
                 // Add click handler to show message chain
                 responseCard.addEventListener('click', () => {
-                    // Use the original index for message chains
                     const messageChain = messageChains[index];
                     if (messageChain) {
                         showMessageChainOverlay(messageChain);
