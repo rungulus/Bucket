@@ -58,6 +58,8 @@ class Bucket extends EventEmitter {
         this.lastResponseTime = null;
         this.uiOpen = false;
         this.silencedChannels = new Map();
+        this.silenceMessageIds = new Map(); // Track which message triggered silencing
+        this.processedStopEmojiMessages = new Set();
         this.client = new Discord.Client({
             intents: [
                 Discord.GatewayIntentBits.Guilds,
@@ -284,27 +286,72 @@ class Bucket extends EventEmitter {
 
                 // Handle silence emoji to stop random responses for a configurable duration
                 if (stopEmoji && (reaction.emoji.name === stopEmoji || reaction.emoji.id === stopEmoji)) {
-                    const duration = (this.silenceDurationMinutes || 30) * 60 * 1000;
+                    // Only trigger once per message
+                    if (this.processedStopEmojiMessages.has(msg.id)) {
+                        return;
+                    }
+
+                    // Do not process messages older than silenceDurationMinutes
+                    const messageAgeMs = Date.now() - msg.createdTimestamp;
+                    const silenceDurationMs = (this.silenceDurationMinutes || 30) * 60 * 1000;
+                    if (messageAgeMs > silenceDurationMs) {
+                        return;
+                    }
+
+                    // Do not trigger on the silence notification message itself
+                    if (msg.content && msg.content.includes('silenced until')) {
+                        return;
+                    }
+
+                    // Check if channel is already silenced
+                    const currentSilenceUntilTime = this.silencedChannels.get(msg.channelId);
+                    if (currentSilenceUntilTime && Date.now() < currentSilenceUntilTime) {
+                        // Channel is still silenced, check if this message is older than the one that triggered it
+                        const silencingMessageId = this.silenceMessageIds.get(msg.channelId);
+                        if (silencingMessageId && msg.id !== silencingMessageId) {
+                            try {
+                                const silencingMessage = await msg.channel.messages.fetch(silencingMessageId);
+                                if (msg.createdTimestamp < silencingMessage.createdTimestamp) {
+                                    // This message is older than the one that triggered silencing, ignore it
+                                    return;
+                                }
+                            } catch (e) {
+                                // If we can't fetch the original message, continue
+                            }
+                        }
+                        // Channel is already silenced, don't trigger again
+                        return;
+                    }
+
+                    // Mark this message as processed
+                    this.processedStopEmojiMessages.add(msg.id);
+
+                    const duration = silenceDurationMs;
                     const silenceUntilTime = Date.now() + duration;
                     const unixTimestamp = Math.floor(silenceUntilTime / 1000);
                     this.silencedChannels.set(msg.channelId, silenceUntilTime);
+                    this.silenceMessageIds.set(msg.channelId, msg.id); // Track which message triggered silencing
                     this.silenceEventsCount++;
 
                     // Console logging
                     console.log(`[STOP EMOJI] Channel ${msg.channelId} silenced by ${user.tag} for ${this.silenceDurationMinutes || 30} minutes until ${new Date(silenceUntilTime).toISOString()}`);
 
                     // Remove all reactions from the message if we have permissions
-                    try {
-                        await msg.reactions.removeAll();
-                    } catch (e) {
-                        // Silently fail if we don't have permissions to remove reactions
-                    }
+                    // try {
+                    //     await msg.reactions.removeAll();
+                    // } catch (e) {
+                    //     // Silently fail if we don't have permissions to remove reactions
+                    // }
 
-                    // Send message to channel with silence notification
+                    // Edit bot's last message to include silence notification
                     try {
-                        await msg.channel.send(`-# silenced until <t:${unixTimestamp}:t>`);
+                        const messages = await msg.channel.messages.fetch({ limit: 10 });
+                        const botLastMessage = messages.find(m => m.author.id === this.client.user.id);
+                        if (botLastMessage) {
+                            await botLastMessage.edit(`${botLastMessage.content}\n-# (bot silenced until <t:${unixTimestamp}:t>)`);
+                        }
                     } catch (e) {
-                        console.error('Failed to send silence notification:', e);
+                        console.error('Failed to edit message with silence notification:', e);
                     }
 
                     try {
