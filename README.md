@@ -1,6 +1,4 @@
-<img src='bucket.png' width='100' align="right">
-
-# Bucket
+# Bucket <img src='bucket.png' width='100' align="right" z-index="999">
 
 A GPT discord bot that uses your own server for training data. This repo is to help you build that bot.
 
@@ -18,7 +16,8 @@ You will need:
 
 ## Step 1 - Prep
 
-**You should probably get consent before doing all this!**
+>[!IMPORTANT]
+>You should get consent from users before doing all of this!
 
   1. To get started, you'll need chat data. Use DiscordChatExporter: https://github.com/Tyrrrz/DiscordChatExporter
 
@@ -30,7 +29,8 @@ You will need:
 
   4. Run the `jsoncleaner.py` python script.
 
-   > You can also use the `jsoncleaner-guided.py` script for more guided training (one user is designated as the user, all others are asisstant replies)
+  > [!TIP]
+  >  You can also use the `jsoncleaner-guided.py` script for more guided training (one user is designated as the user, all others are asisstant replies)
 
   5. When asked, enter your system prompt. 
   
@@ -38,7 +38,8 @@ You will need:
 
 
 ## Step 2 - Training
-**This step will cost you at least $5**
+>[!WARNING]
+>**This step will cost you at least $5**
 
 Use the OpenAI Dev Portal: https://platform.openai.com/finetune/
 
@@ -50,12 +51,19 @@ Training will also take a while, especially if you've given it a lot of data. Fo
 
 ## Step 3 - Releasing it into the wild (Discord)
 
-> **Your AI Model will want to say slurs after a while, no matter how much you train it. There's a filter in place which should block most if not all of them, and a well crafted system prompt will prevent them as well. We will need a better solution for "ignoring" them from OpenAI's data in the future, though.**
+> [!CAUTION]
+> Your AI Model will want to say slurs after a while, no matter how much you train it.
+> There's a filter in place which should block most if not all of them, and a well crafted system prompt will prevent them as well.
+> We will need a better solution for "ignoring" them from OpenAI's data in the future, though.
 
 1. Rename `bot/config.sample.json` to `config.json`, and get ready to enter a lot of settings:
 
 - discordToken: your discord api key you got from the developer's portal
 - allowedChannelId: the channel you want the bot to look at for pings (can be a thread). This can be a single channel ID string or an array of channel ID strings to allow multiple channels/threads.
+  - single channel exmaple:
+    - allowedChannelId: 12345678900011
+  - multiple channels:
+    - allowedChannelID: ['1234567890','0987654321']
 - trainEmoji: an emoji reaction you want the bot to watch for to save the response (and original message) for future training
 - reactionCount: how many reactions until the bot should save the message
 - stopEmoji: what emoji to use to have Bucket stop checking messages in the random chance channels for a configurable time
@@ -63,12 +71,12 @@ Training will also take a while, especially if you've given it a lot of data. Fo
 - openaiapi section:
   - apiKey: your OpenAI api key
   - modelId: your fine tuned model id
-
-<hr>
-
-  > you should leave these settings as is, but here is what these do
-  - maxTokens: how many tokens your bot can use per response
-    - default: 1024
+- maxTokens: how many tokens your bot can use per response
+  - default: 1024
+  <hr>
+> [!TIP]
+> this section is where you will do most of your tuning,
+> mess around with these to change how the bot will respond
   - temperature: how "random" you want the bot to be, can be 0-2. lower is less "random"
     - default: 0.9
   - presencePenalty: how "on topic" the bot should be, can be 0-2. lower is more "on topic"
@@ -76,14 +84,13 @@ Training will also take a while, especially if you've given it a lot of data. Fo
   - frequencyPenalty: how "repetitive" the bot should be, can be 0-2. lower is more "repetitive"
     - default: 0.3
   - severityCategory: what "level" of slurs and bad words should we filter.
-    - default: high
+    - default: high 
+  - systemPrompt: your system prompt that the ai will use
   <hr>
   
-  - systemPrompt: your system prompt that the ai will use
-
-> **A note on system prompts**
->
-> While you're in `config.json`, you need to add a system prompt. This sets the guidelines and "boundaries" that the AI *mostly* follows. You can use the same system prompt that was used in `jsoncleaner.py`, but now would be the best time to mess around and see what gives you the best results. 
+> [!NOTE] 
+> While you're in `config.json`, you need to add a system prompt. This sets the guidelines and "boundaries" that the AI *mostly* follows.
+> You can use the same system prompt that was used in `jsoncleaner.py`, but now would be the best time to mess around and see what gives you the best results. 
 
 - allowedUserTag: a discord user id for a user who can use the bot in any channel
 - removePings: can be 0 or 1, 1 to remove pings, 0 to allow them
@@ -112,6 +119,7 @@ Tuning the AI Model is not an exact science, and will vary between models. I've 
     - 0.3
   - frequencyPenalty: how "repetitive" the bot should be, can be 0-2. lower is more "repetitive"
     - 0.3
+  - systemPrompt: the general basics on how your bot will "act" - add things to this to add them to the bot's memory 
 
 Bucket will read the config each time the bot is triggered, so you don't need to restart the bot each time you change one of these values (just save `config.json` and the bot will pick it up). Some general advice:
 
@@ -121,6 +129,7 @@ Bucket will read the config each time the bot is triggered, so you don't need to
 
 - If the bot sends long messages of random characters/words, try raising the `frequencyPenalty` value
 
-I'd recommend looking up some further info on these penalties and how they work on the backend for further tuning, [this article](https://medium.com/@pushparajgenai2025/understanding-presence-penalty-and-frequency-penalty-in-openai-chat-completion-api-calls-2e3a22547b48) is a good read.
+> [!NOTE]
+> I'd recommend looking up some further info on these penalties and how they work on the backend for further tuning, [this article](https://medium.com/@pushparajgenai2025/understanding-presence-penalty-and-frequency-penalty-in-openai-chat-completion-api-calls-2e3a22547b48) is a good read.
 ## Contributing
 Feel Free! If you want to change something just open a PR.
