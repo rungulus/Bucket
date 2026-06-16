@@ -61,9 +61,9 @@ Training will also take a while, especially if you've given it a lot of data. Fo
 - discordToken: your discord api key you got from the developer's portal
 - allowedChannelId: the channel you want the bot to look at for pings (can be a thread). This can be a single channel ID string or an array of channel ID strings to allow multiple channels/threads.
   - single channel exmaple:
-    - allowedChannelId: '1234567890'
+    - allowedChannelId: ["12345678900"]
   - multiple channels:
-    - allowedChannelID: ['1234567890','0987654321']
+    - allowedChannelID: ["1234567890","0987654321"]
 - trainEmoji: an emoji reaction you want the bot to watch for to save the response (and original message) for future training
 - reactionCount: how many reactions until the bot should save the message
 - stopEmoji: what emoji to use to have Bucket stop checking messages in the random chance channels for a configurable time
